@@ -1,0 +1,441 @@
+{#-
+  Component CSS for the newspaper: the paper itself, the masthead, sheets, story
+  furniture, digests, markets, footers. Layout *widths* live in newspaper.html.j2,
+  which adds the responsive rules (640 / 1024) around this sheet-agnostic core.
+
+  No fixed page boxes: the document grows with its content, so nothing can be clipped
+  and "two pages" is a length target rather than a constraint.
+-#}
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background-color: var(--desk);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  padding: 0 0 var(--nm-space-8);
+}
+
+p { margin: 0; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+figure { margin: 0; }
+
+a {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: var(--hair) dotted var(--ink-subtle);
+}
+a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+a:focus-visible,
+button:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: var(--focus-ring);
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--paper-raised);
+  color: var(--ink);
+  padding: var(--nm-space-2) var(--nm-space-3);
+  border: var(--rule-thin) solid var(--accent);
+  font-family: var(--font-label);
+  font-size: var(--nm-text-sm);
+}
+.skip-link:focus { left: var(--nm-space-4); top: var(--nm-space-4); }
+
+/* ---------- the sheet of newsprint ---------- */
+.paper {
+  position: relative;
+  max-width: var(--paper-max);
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 2.6rem) clamp(0.9rem, 3.4vw, 3.2rem) clamp(1.2rem, 3vw, 2.4rem);
+  background-color: var(--paper);
+  /* newsprint grain: two hairline gradients, no image request */
+  background-image:
+    repeating-linear-gradient(0deg, var(--grain) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, var(--grain-fine) 0 1px, transparent 1px 4px);
+  box-shadow: var(--shadow-paper);
+}
+
+/* ---------- masthead ---------- */
+.masthead { text-align: center; margin-bottom: var(--sheet-gap); }
+
+.masthead-rules {
+  border-top: var(--rule-heavy) solid var(--rule-strong);
+  border-bottom: var(--hair) solid var(--rule-strong);
+  padding-top: var(--nm-space-1);
+}
+
+.masthead-ornament { color: var(--ink-subtle); margin: 0 auto var(--nm-space-2); max-width: 34rem; }
+.masthead-ornament svg { display: block; width: 100%; height: 3.4mm; }
+
+.masthead-title {
+  font-family: var(--font-display);
+  font-size: var(--masthead-size);
+  font-weight: var(--nm-weight-bold);
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.masthead-bar {
+  margin-top: var(--nm-space-3);
+  border-top: var(--hair) solid var(--rule-strong);
+  border-bottom: var(--rule-heavy) solid var(--rule-strong);
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-label);
+  font-size: var(--label-size);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.45em 0.6em;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4em 1.1em;
+}
+
+.masthead-meta {
+  margin-top: var(--nm-space-2);
+  font-family: var(--font-label);
+  font-size: var(--nm-text-2xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-subtle);
+}
+
+/* ---------- sheets ---------- */
+.sheet { display: block; }
+
+.sheet + .sheet {
+  margin-top: var(--sheet-gap);
+  padding-top: var(--sheet-gap);
+  border-top: var(--rule-heavy) double var(--rule-strong);
+  position: relative;
+}
+
+.sheet-label {
+  position: absolute;
+  top: calc(-1 * var(--nm-space-3));
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--paper);
+  padding: 0 0.8em;
+  font-family: var(--font-label);
+  font-size: var(--nm-text-2xs);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-subtle);
+}
+
+.sheet-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--nm-space-2);
+  border-bottom: var(--rule-thin) solid var(--rule-strong);
+  padding-bottom: var(--nm-space-1);
+  margin-bottom: var(--nm-space-3);
+  font-family: var(--font-label);
+  font-size: var(--nm-text-2xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.sheet-head-title { font-weight: var(--nm-weight-bold); letter-spacing: 0.2em; }
+.sheet-head-note { color: var(--ink-subtle); letter-spacing: 0.08em; text-transform: none; }
+
+/* ---------- story furniture ---------- */
+.kicker {
+  font-family: var(--font-label);
+  font-size: var(--kicker-size);
+  font-weight: var(--nm-weight-bold);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.35em;
+}
+
+.lead-headline {
+  font-family: var(--font-display);
+  font-size: var(--lead-headline);
+  font-weight: var(--nm-weight-bold);
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+  margin-bottom: 0.35em;
+}
+
+.secondary-headline,
+.section-headline,
+.culture-headline {
+  font-family: var(--font-display);
+  font-weight: var(--nm-weight-bold);
+  line-height: 1.12;
+  letter-spacing: -0.008em;
+  margin-bottom: 0.3em;
+}
+.secondary-headline { font-size: var(--secondary-headline); }
+.section-headline { font-size: var(--section-headline); }
+.culture-headline { font-size: var(--culture-headline); }
+
+.deck {
+  font-size: 1.02em;
+  font-style: italic;
+  color: var(--ink-muted);
+  margin-bottom: 0.45em;
+  text-wrap: pretty;
+}
+
+.dateline {
+  font-family: var(--font-label);
+  font-size: var(--nm-text-2xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-subtle);
+  margin-bottom: 0.5em;
+}
+
+.para { text-align: justify; hyphens: auto; margin-bottom: 0.7em; orphans: 2; widows: 2; }
+
+/* the lead opens the paper the way a paper does */
+.lead-body .para:first-child::first-letter {
+  float: left;
+  font-family: var(--font-display);
+  font-size: 3.4em;
+  line-height: 0.76;
+  font-weight: var(--nm-weight-bold);
+  padding: 0.02em 0.08em 0 0;
+}
+
+.sources {
+  font-family: var(--font-label);
+  font-size: var(--nm-text-2xs);
+  letter-spacing: 0.06em;
+  color: var(--ink-subtle);
+  margin-top: 0.4em;
+}
+.sources-label { text-transform: uppercase; letter-spacing: 0.14em; }
+
+.story + .story { margin-top: var(--nm-space-4); }
+
+.section + .section { margin-top: var(--nm-space-5); }
+
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--nm-space-2);
+  border-top: var(--rule-heavy) solid var(--rule-strong);
+  border-bottom: var(--hair) solid var(--rule-strong);
+  padding: 0.25em 0 0.3em;
+  margin-bottom: var(--nm-space-3);
+  font-family: var(--font-label);
+  font-size: var(--nm-text-xs);
+  font-weight: var(--nm-weight-bold);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.section-head-note {
+  font-weight: var(--nm-weight-regular);
+  font-size: var(--nm-text-2xs);
+  letter-spacing: 0.08em;
+  text-transform: none;
+  color: var(--ink-subtle);
+}
+
+/* ---------- illustration ---------- */
+.visual {
+  border-top: var(--rule-thin) solid var(--rule-strong);
+  border-bottom: var(--rule-thin) solid var(--rule-strong);
+  padding: var(--nm-space-3) 0;
+  margin-bottom: var(--nm-space-4);
+  text-align: center;
+}
+.visual svg { display: block; width: auto; max-width: 100%; max-height: 42vh; margin: 0 auto; color: var(--ink-subtle); }
+.visual-caption {
+  margin-top: var(--nm-space-2);
+  font-family: var(--font-label);
+  font-size: var(--nm-text-2xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-subtle);
+  text-align: left;
+}
+
+/* ---------- briefs digest ---------- */
+.section--briefs { background: var(--paper-raised); border: var(--rule-thin) solid var(--rule); padding: var(--nm-space-3); }
+.section--briefs .section-head { border-top: 0; margin-bottom: var(--nm-space-2); }
+
+.brief-list { display: grid; gap: var(--nm-space-3); }
+.brief { border-top: var(--hair) solid var(--rule); padding-top: var(--nm-space-2); }
+.brief:first-child { border-top: 0; padding-top: 0; }
+
+.brief-label {
+  display: block;
+  font-family: var(--font-label);
+  font-size: var(--nm-text-2xs);
+  font-weight: var(--nm-weight-bold);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.2em;
+}
+.brief-text { font-size: 0.98em; }
+
+/* ---------- markets table ---------- */
+.market-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.15em var(--nm-space-2);
+  padding: 0.4em 0;
+  border-bottom: var(--hair) solid var(--rule);
+}
+.market-label { font-family: var(--font-label); font-size: var(--nm-text-xs); font-weight: var(--nm-weight-semibold); letter-spacing: 0.02em; }
+.market-note { grid-column: 1 / -1; font-family: var(--font-body); font-size: var(--nm-text-xs); color: var(--ink-muted); }
+.market-dir { display: inline-block; width: 0; height: 0; border-left: 0.42em solid transparent; border-right: 0.42em solid transparent; }
+.market-dir--up { border-bottom: 0.6em solid var(--dir-up); }
+.market-dir--down { border-top: 0.6em solid var(--dir-down); }
+.market-dir--flat { width: 0.95em; border-left: 0; border-right: 0; border-bottom: 0.22em solid var(--dir-flat); }
+.markets-note { font-size: var(--nm-text-sm); font-style: italic; color: var(--ink-muted); margin-top: var(--nm-space-2); }
+
+/* ---------- key numbers ---------- */
+.key-numbers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--nm-space-3);
+  margin-top: var(--nm-space-4);
+  border-top: var(--rule-heavy) solid var(--rule-strong);
+  padding-top: var(--nm-space-3);
+}
+.key-number-value { font-family: var(--font-display); font-size: 1.5rem; font-weight: var(--nm-weight-bold); line-height: 1.05; }
+.key-number-label { font-family: var(--font-label); font-size: var(--nm-text-2xs); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
+
+/* ---------- bullets ---------- */
+.bullet-list { display: grid; gap: var(--nm-space-2); border-top: var(--hair) solid var(--rule); padding-top: var(--nm-space-2); margin-top: var(--nm-space-2); }
+.bullet { position: relative; padding-left: var(--nm-space-4); font-size: 0.98em; }
+.bullet::before { content: ""; position: absolute; left: 0; top: 0.6em; width: 0.42em; height: 0.42em; background: var(--accent); }
+
+/* ---------- footers ---------- */
+.sheet-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--nm-space-3);
+  margin-top: var(--nm-space-5);
+  padding-top: var(--nm-space-2);
+  border-top: var(--hair) solid var(--rule-strong);
+  font-family: var(--font-label);
+  font-size: var(--nm-text-2xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-subtle);
+}
+.footer-text { font-weight: var(--nm-weight-bold); letter-spacing: 0.18em; }
+
+.colophon {
+  margin-top: var(--nm-space-5);
+  padding-top: var(--nm-space-3);
+  border-top: var(--rule-heavy) solid var(--rule-strong);
+  font-family: var(--font-label);
+  font-size: var(--nm-text-2xs);
+  color: var(--ink-subtle);
+}
+.colophon p + p { margin-top: var(--nm-space-1); }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- print: a paper that prints like a paper ----------
+   No fixed page box anywhere — the document flows — but printing still gets the
+   broadsheet grid and newspaper type, so "two sheets of newsprint" is literally what
+   comes out of a printer. Column rules are newspaper furniture, not card accents. */
+@media print {
+  @page { size: A4; margin: 10mm; }
+
+  body { background: var(--paper); padding: 0; font-size: 8.3pt; line-height: 1.3; }
+
+  .paper {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    background-image: none;
+  }
+
+  .skip-link, .screen-nav, .sheet-label, .colophon, .sheet-head-note { display: none; }
+
+  .masthead { margin-bottom: 3mm; }
+  .masthead-title { font-size: 26pt; }
+  .masthead-ornament { margin-bottom: 1mm; }
+  .masthead-bar { font-size: 6pt; padding: 0.3em 0.5em; gap: 0.25em 0.8em; }
+  .masthead-meta { font-size: 5.6pt; margin-top: 1mm; }
+
+  .sheet-head { margin-bottom: 3mm; padding-bottom: 0.6mm; font-size: 6.4pt; }
+
+  .lead-headline { font-size: 15.5pt; }
+  .secondary-headline { font-size: 10pt; }
+  .section-headline { font-size: 9.4pt; }
+  .culture-headline { font-size: 8.4pt; }
+  .kicker { font-size: 6pt; margin-bottom: 0.2em; }
+  .deck { font-size: 8.2pt; margin-bottom: 0.3em; }
+  .dateline { font-size: 5.6pt; margin-bottom: 0.3em; }
+  .brief-text, .bullet { font-size: 7.5pt; }
+  .brief-label { font-size: 5.8pt; }
+  .sources { font-size: 5.2pt; margin-top: 0.25em; }
+  .key-number-value { font-size: 11pt; }
+  .key-number-label { font-size: 5.4pt; }
+  .para { margin-bottom: 0.42em; }
+  .story + .story { margin-top: 2.4mm; }
+  .section + .section { margin-top: 3mm; }
+  .section-head { margin-bottom: 1.6mm; padding: 0.15em 0 0.2em; font-size: 6.4pt; }
+  .visual { padding: 1.6mm 0; margin-bottom: 3mm; }
+  .visual svg { max-height: 30mm; }
+  .visual-caption { font-size: 5.2pt; margin-top: 1mm; }
+
+  /* front page: lead beside the rail, then the second band as a two-column flow */
+  .front-top { display: grid; grid-template-columns: 1.7fr 1fr; gap: 4mm; align-items: start; }
+  .front-rail { border-left: 0.4pt solid var(--rule); padding-left: 3.5mm; }
+  .front-bottom {
+    display: block;
+    columns: 2;
+    column-gap: 4.5mm;
+    column-rule: 0.4pt solid var(--rule);
+  }
+  .front-bottom > * { break-inside: avoid; }
+
+  .lead-body { display: grid; grid-template-columns: 1fr 1fr; gap: 3.5mm; align-items: start; }
+
+  /* inside page: one continuous multi-column flow, the way an inside page is set */
+  .inside-columns { display: block; columns: 2; column-gap: 4.5mm; column-rule: 0.4pt solid var(--rule); }
+  .inside-column { display: contents; }
+  .inside-columns > .inside-column > * { break-inside: avoid; }
+
+  .brief-list, .bullet-list { display: grid; grid-template-columns: 1fr; gap: 1.4mm; }
+  .key-numbers { grid-template-columns: repeat(4, 1fr); margin-top: 2.5mm; padding-top: 1.6mm; }
+
+  .story, .section, .section--briefs, .key-numbers { break-inside: avoid; }
+  .sheet + .sheet { border-top: 0; margin-top: 0; padding-top: 0; }
+  a { border-bottom: 0; }
+}

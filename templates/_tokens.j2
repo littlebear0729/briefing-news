@@ -1,16 +1,17 @@
 {#-
-  Design tokens. TWO :root blocks, in this order, always at the top of the first
-  <style> element (DESIGN.md invariant 7):
+  Design tokens. TWO :root blocks, in this order, always at the top of the <style>
+  element (DESIGN.md invariant 7):
 
-    1. Neutral Modern design system — treat as a verbatim, vendored block. Do not
-       edit values here; extend below instead.
-    2. The Global Brief project extension — project-owned, edit freely.
+    1. Neutral Modern design system — the vendored structural block: spacing, type
+       scale, radii, focus ring. Values here are not edited in place.
+    2. The Global Brief project palette — newspaper: newsprint paper, ink, rules,
+       masthead red, texture tints.
 
-  Consequence of the split: outside :root there must be no colour *literal*
-  (hex/rgb/hsl). Everything else — layout, rules, print geometry — reads tokens.
+  Consequence of the split: outside the two :root blocks there must be no colour
+  *literal* (hex/rgb/hsl). Every rule below reads a token.
 -#}
 :root {
-  /* --- Neutral Modern: colour --- */
+  /* --- Neutral Modern: colour (kept complete; the project block overrides what it uses) --- */
   --nm-color-bg: #ffffff;
   --nm-color-bg-subtle: #fafafa;
   --nm-color-surface: #f4f4f5;
@@ -72,52 +73,48 @@
 }
 
 :root {
-  /* --- The Global Brief: project extension tokens --- */
-  --paper: var(--nm-color-bg);
-  --paper-subtle: var(--nm-color-bg-subtle);
-  --ink: var(--nm-color-text);
-  --ink-muted: var(--nm-color-text-muted);
-  --ink-subtle: var(--nm-color-text-subtle);
-  --rule: var(--nm-color-border);
-  --rule-strong: var(--nm-color-border-strong);
-  --rule-hair: 0.5pt;
+  /* --- The Global Brief: newsprint palette --- */
+  --desk: #dcd5c5;              /* the surface the paper lies on */
+  --paper: #f5f0e3;             /* newsprint body */
+  --paper-raised: #fbf8ef;      /* boxes and rules' breathing room */
+  --paper-sunken: #ebe4d2;      /* digests, tables */
+  --ink: #17140f;
+  --ink-muted: #494337;
+  --ink-subtle: #6c6455;
+  --rule: #bdb29c;
+  --rule-faint: #d5cbb6;
+  --rule-strong: #17140f;
+  --accent: #8a1c1c;            /* masthead and kicker red */
+  --accent-quiet: #a4433c;
+  --dir-up: #1f5c3a;
+  --dir-down: #8a1c1c;
+  --dir-flat: #6c6455;
+  --grain: rgba(23, 20, 15, 0.035);
+  --grain-fine: rgba(23, 20, 15, 0.02);
+  --shadow-paper: 0 1px 1px rgba(23, 20, 15, 0.10), 0 12px 32px rgba(23, 20, 15, 0.14);
+  --focus-ring: 0 0 0 2px var(--paper), 0 0 0 4px var(--accent);
+
+  /* --- type: a newspaper, so serif for the reading, sans for the labels --- */
+  --font-body: Georgia, "Iowan Old Style", "Times New Roman", "Noto Serif", "Songti SC", serif;
+  --font-display: "Playfair Display", Georgia, "Iowan Old Style", "Times New Roman", serif;
+  --font-label: "Segoe UI", "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+
+  --text-body: 1.02rem;
+  --text-body-lg: 1.08rem;
+  --leading-body: 1.62;
+  --masthead-size: clamp(2.5rem, 11vw, 4.6rem);
+  --lead-headline: clamp(1.9rem, 6.4vw, 3.1rem);
+  --secondary-headline: clamp(1.25rem, 3vw, 1.6rem);
+  --section-headline: clamp(1.15rem, 2.4vw, 1.4rem);
+  --culture-headline: 1.06rem;
+  --kicker-size: 0.66rem;
+  --label-size: 0.66rem;
+  --sheet-gap: clamp(1.5rem, 3vw, 2.5rem);
+  --measure: 34rem;
+
+  /* --- structure --- */
+  --hair: 1px;
   --rule-thin: 1px;
-  --rule-heavy: 2.5pt;
-  --accent: var(--nm-color-accent);
-  --accent-wash: var(--nm-color-accent-subtle);
-  --on-accent: var(--nm-color-on-accent);
-  --dir-up: var(--nm-color-positive);
-  --dir-down: var(--nm-color-negative);
-  --dir-flat: var(--nm-color-neutral);
-  --focus-ring: var(--nm-focus-ring);
-  --brief-wash: var(--nm-color-surface);
-
-  /* print geometry: A4, fixed, exactly two pages */
-  --page-width: 210mm;
-  --page-height: 297mm;
-  --page-pad-block: 8mm;
-  --page-pad-inline: 10.5mm;
-  --page-footer-space: 4.5mm;
-  --front-gap: 3mm;
-  --column-gap: 4.6mm;
-
-  /* print type scale — calibrated against measured page overflow, not guessed:
-     the worst-case edition allowed by config.budgets still fits both boxes with
-     the footer on the page it belongs to (see tests/test_layout.py). */
-  --masthead-size: 32pt;
-  --lead-headline-size: 19pt;
-  --secondary-headline-size: 11.8pt;
-  --section-headline-size: 10.8pt;
-  --culture-headline-size: 9.6pt;
-  --print-body-size: 7.8pt;
-  --print-body-leading: 1.21;
-  --print-meta-size: 6.2pt;
-  --print-source-size: 5.6pt;
-  --kicker-size: 6.2pt;
-  --deck-size: 8.2pt;
-  --brief-size: 7.7pt;
-
-  /* screen rhythm */
-  --screen-max: 46rem;
-  --screen-max-wide: 74rem;
+  --rule-heavy: 3px;
+  --paper-max: 74rem;
 }

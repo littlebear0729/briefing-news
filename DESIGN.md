@@ -353,6 +353,49 @@ feed 实测：19 个 feed 全部 HTTP 200 且能解析出条目（geopolitics/te
    `state/sent.json` 的记录与"第二遍不发"。
 3. **GitHub Actions 真跑**：workflow 未在 GitHub 上执行过（本机无 CI）。请跑一次 `workflow_dispatch`，
    重点看 `playwright install --with-deps chromium`、artifact 路径、以及 `state/sent.json` 的回写 push。
-4. **视觉终检**：本机模型无法查看图片，所以版式只做了**几何与文本层面的测量**（页盒、溢出、
-   分栏、片段完整性），没有做"好不好看"的人工确认。请打开
-   `dist/mobile-*.html` 与两份 PDF 目视一遍（尤其断点 640/1024 的表现与插图比例）。
+4. **视觉终检**：本机模型无法查看图片，所以版式只做了**几何与文本层面的测量**（文档高度、
+   打印页数、颜色令牌、段落完整性），没有做"好不好看"的人工确认。请打开
+   `dist/global-brief-*.html` 目视一遍（手机窄屏、640、1024 三档，以及打印预览）。
+
+---
+
+## 12. 第二版修订（2026-10-13，按用户新需求）
+
+四条新需求覆盖了 §2-§7 中关于"PDF / 固定 A4 版面"的部分。**§12 优先于前文冲突之处。**
+
+| # | 新需求 | 本版做法 |
+|---|---|---|
+| 1 | 只输出 HTML，不要 PDF；响应式，手机和电脑都能读 | 删除 `export.py`、`render_mobile.py` 与全部 PDF 断言；产物是**一份自包含 HTML**（内联 CSS、内联 SVG、零外部请求、零脚本），`publish` 用 `sendDocument` 发 HTML（`text/html`）。`render.py` 成为唯一渲染入口；`preflight.py` 接管交付前的全部检查 |
+| 2 | 不要求固定 A4 页面尺寸，"篇幅差不多两个 A4"即可 | **取消固定页盒**（无 `height: 297mm`、无 `overflow: hidden`）→ 结构上不可能再发生裁剪。长度变成**目标**：`content.estimate_length` 把一期折算成"A4 张数"，`layout.target_sheets: 2.0 ± 0.7`，由 preflight 强制。常数 `MM_PER_SHEET` 由实测标定：fixture 打印恰好 2 页 |
+| 3 | 排版与背景更像报纸出版物 | 新闻纸底色 `--paper #f5f0e3` + 细颗粒纹理（两层 repeating-linear-gradient，无图片请求）、墨色重规线、黑色报头横条、小体大写 kicker/栏目标题、导语首字下沉、两端对齐 + 断词、行情表格线、行内署名"—— Reuters, AP"。打印走**独立的多栏密排**（`@page A4`、8.3pt、栏线），所以同一份 HTML 打出来就是一张真正的两页报纸 |
+| 4 | 补充更多权威信源（RSS） | 白名单扩到 **51 个域名**、feed 扩到 **55 条**（geopolitics 17 / tech 13 / finance 11 / sport 7 / entertainment 13），全部在 2026-10-13 实测可用。抓取改为**并发 + 重试**（8 线程；实测 21 秒完成 55 条，五节各 12 条候选）；单一来源被墙不会清空某节 |
+
+### 12.1 文件变化
+
+- **删除**：`pipeline/export.py`、`pipeline/render_mobile.py`、`templates/brief.html.j2`、
+  `templates/mobile.html.j2`、`templates/_print.j2`、`templates/_pages.j2`、`tests/test_export.py`
+- **新增**：`pipeline/preflight.py`（交付前检查）、`templates/newspaper.html.j2`（唯一模板）、
+  `templates/_layout.j2`（组件 CSS，含打印密排）、`tests/printprobe.py`（真浏览器印页数）、
+  `pipeline/content.py` 中的 `estimate_length` / `closing_snippets` / `normalise_text`
+- **依赖**：去掉 `playwright`、`pypdf`（CI 不再需要浏览器与 PDF 工具链）
+- **DESIGN 不变式**：1、2、3、4、6、7、8 仍然成立；**不变式 5（固定两页 A4）作废**，改为
+  "长度是目标、由 preflight 校验"；`overflow: hidden` 在版式中被明确禁止（新增测试项）
+
+### 12.2 交付前的检查（取代原 PDF 断言）
+
+`preflight.assert_deliverable(html, payload, config)` 全部必须通过，否则 `run.py` 标记失败、
+`publish` 拒绝发送：文档唯一性（一个 `<html>`/`<body>`、两个 `data-sheet`、每张纸都有页脚）、
+无残留模板标记、无脚本、**每个段落与每条小标题都真的出现在页面文本里**（从 edition JSON 逐条比对）、
+每节结尾词齐全、所有外链都在白名单、长度落在目标区间。`tests/test_render.py` 对其中每条都有
+反向用例（丢掉一段、改掉页脚、塞个站外链接、注入 `<script>` 都必须失败）。
+
+### 12.3 本版实测
+
+```
+python -m pytest -q                                    110 passed
+fixture：estimate 2.01 张 → 打印 2 页 A4（真浏览器），preflight ok（2 张纸 / 28 段 / 11 处节尾 / 28 链接）
+最坏情况（预算打满 1376 词）：estimate 2.17 张 → 打印 3 页，preflight 通过（目标 2.0±0.7）
+screen @1440px：fixture 文档高 4090px ≈ 3.6 个 A4 高度（屏幕字号更大，符合预期）
+实时抓取：55 条 feed、60 条候选（五节各 12）、21 秒
+颜色字面量：`:root` 之外 0 处；断点仅 640/1024；`:focus-visible` + `var(--focus-ring)` 齐备
+```

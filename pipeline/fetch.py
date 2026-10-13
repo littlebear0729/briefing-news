@@ -20,6 +20,8 @@ import json
 import os
 import re
 import sys
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 from urllib.parse import parse_qsl, urlencode, urlsplit
@@ -155,6 +157,24 @@ def fetch_feed(url: str, *, timeout: float = DEFAULT_TIMEOUT) -> bytes:
     return response.content
 
 
+def _download_with_retry(url: str, timeout: float, attempts: int = 3) -> bytes:
+    """Download one feed, retrying transient failures.
+
+    Dozens of feeds are fetched at once, and publishers do throttle concurrent TLS
+    connections (a bare ``SSLEOFError`` from a host that answers fine seconds later).
+    A lost feed is a thinner section, so one retry is worth the wall-clock.
+    """
+    last_error: FetchError | None = None
+    for attempt in range(1, max(1, attempts) + 1):
+        try:
+            return fetch_feed(url, timeout=timeout)
+        except FetchError as exc:
+            last_error = exc
+            if attempt < attempts:
+                time.sleep(0.4 * attempt)
+    raise last_error or FetchError(f"GET {url} failed")
+
+
 def _entry_published(entry: Mapping[str, Any]) -> dt.datetime | None:
     """Published (or updated) time as an aware UTC datetime, else ``None``."""
     for key in ("published_parsed", "updated_parsed", "created_parsed"):
@@ -257,11 +277,14 @@ def collect(
     *,
     documents: Mapping[str, bytes | str] | None = None,
     timeout: float = DEFAULT_TIMEOUT,
+    max_workers: int = 8,
 ) -> dict[str, Any]:
     """Build the articles archive payload for one edition.
 
     *documents* maps feed URL -> raw feed body, which makes the whole stage runnable
-    offline (tests) with identical code paths to production.
+    offline (tests) with identical code paths to production. Without it, feeds are
+    downloaded concurrently: there are dozens of them, one lagging publisher must not
+    hold up the rest, and the per-feed results are still reported in config order.
     """
     edition = normalize_edition(edition)
     date = normalize_date(run_date)
@@ -270,55 +293,78 @@ def collect(
     section_cap = int(budgets.get("section_cap", 12))
     summary_chars = int(budgets.get("summary_chars", 800))
 
+    # every configured feed, in config order
+    planned: list[tuple[str, Mapping[str, Any]]] = [
+        (section, feed)
+        for section in section_ids(config)
+        for feed in (config["feeds"].get(section) or [])
+        if str(feed.get("url") or "").strip()
+    ]
+
+    bodies: dict[str, bytes | str] = {}
+    failures: dict[str, str] = {}
+    to_download: list[str] = []
+    for _section, feed in planned:
+        url = str(feed["url"]).strip()
+        if not sources.is_allowed(url):
+            failures[url] = f"feed {url} is not on the domain whitelist — skipped"
+            continue
+        if documents is not None and url in documents:
+            bodies[url] = documents[url]
+            continue
+        to_download.append(url)
+
+    if to_download:
+        with ThreadPoolExecutor(max_workers=max(1, min(max_workers, len(to_download)))) as pool:
+            futures = {
+                pool.submit(_download_with_retry, url, timeout): url for url in to_download
+            }
+            for future in as_completed(futures):
+                url = futures[future]
+                try:
+                    bodies[url] = future.result()
+                except FetchError as exc:
+                    failures[url] = str(exc)
+
     seen_urls: set[str] = set()
     seen_titles: set[str] = set()
     sections: dict[str, list[dict[str, Any]]] = {}
     feed_report: list[dict[str, Any]] = []
 
-    for section in section_ids(config):
-        feeds = config["feeds"].get(section) or []
-        collected: list[dict[str, Any]] = []
-        for feed in feeds:
-            url = str(feed.get("url") or "").strip()
-            if not url:
-                continue
-            record: dict[str, Any] = {"section": section, "url": url, "feed": feed.get("name")}
-            if not sources.is_allowed(url):
-                record.update(status="rejected", reason="feed url is not whitelisted", kept=0)
-                feed_report.append(record)
-                _warn(f"{section}: feed {url} is not on the domain whitelist — skipped")
-                continue
-            try:
-                document = (
-                    documents[url]
-                    if documents is not None and url in documents
-                    else fetch_feed(url, timeout=timeout)
-                )
-            except FetchError as exc:
-                record.update(status="error", reason=str(exc), kept=0)
-                feed_report.append(record)
-                _warn(f"{section}: {exc}")
-                continue
-            candidates, entries_seen = parse_feed(
-                document, feed, section, start, end, summary_chars=summary_chars
-            )
-            record.update(
-                status="ok", entries=entries_seen, in_window=len(candidates), kept=0
-            )
-            kept_here = 0
-            for candidate in candidates:
-                key = url_key(candidate["url"])
-                tkey = title_key(candidate["title"])
-                if key in seen_urls or (tkey and tkey in seen_titles):
-                    continue
-                seen_urls.add(key)
-                if tkey:
-                    seen_titles.add(tkey)
-                collected.append(candidate)
-                kept_here += 1
-            record["kept"] = kept_here
+    for section, feed in planned:
+        url = str(feed.get("url") or "").strip()
+        record: dict[str, Any] = {"section": section, "url": url, "feed": feed.get("name")}
+        if url in failures:
+            record.update(status="rejected" if "whitelist" in failures[url] else "error", reason=failures[url], kept=0)
             feed_report.append(record)
+            _warn(f"{section}: {failures[url]}")
+            continue
+        body = bodies.get(url)
+        if body is None:  # pragma: no cover - defensive
+            record.update(status="error", reason="no body", kept=0)
+            feed_report.append(record)
+            continue
 
+        candidates, entries_seen = parse_feed(
+            body, feed, section, start, end, summary_chars=summary_chars
+        )
+        record.update(status="ok", entries=entries_seen, in_window=len(candidates), kept=0)
+        kept_here = 0
+        for candidate in candidates:
+            key = url_key(candidate["url"])
+            title_key_value = title_key(candidate["title"])
+            if key in seen_urls or (title_key_value and title_key_value in seen_titles):
+                continue
+            seen_urls.add(key)
+            if title_key_value:
+                seen_titles.add(title_key_value)
+            sections.setdefault(section, []).append(candidate)
+            kept_here += 1
+        record["kept"] = kept_here
+        feed_report.append(record)
+
+    for section in section_ids(config):
+        collected = sections.get(section, [])
         collected.sort(key=lambda item: (item["published"], item["title"]), reverse=True)
         if len(collected) > section_cap:
             collected = collected[:section_cap]

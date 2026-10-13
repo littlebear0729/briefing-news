@@ -63,18 +63,19 @@ model:
 
 # ---------------------------------------------------------------------------
 # Candidate pool. Only whitelisted domains survive fetch.py (sources.py is the
-# gate; render_mobile re-checks before rendering).
+# gate; render.py re-checks before rendering).
 #
-# Every URL below was verified live (HTTP 200, entries parsed) on 2026-10-13. Feeds
-# rot silently, which is why the pipeline warns per empty section instead of quietly
-# printing a thinner paper.
+# Every URL below was verified live on 2026-10-13: HTTP 200, parses as XML, and carries
+# entries. Feeds rot silently, which is why the pipeline warns per empty section rather
+# than quietly printing a thinner paper. More feeds per section also means a flaky or
+# blocking publisher cannot empty a section on its own.
 #
 # Known dead ends, verified the same day — do not "fix" these by guessing:
 #   * Reuters has discontinued public RSS (all /arc/outboundfeeds and feeds.reuters.com
 #     endpoints return 404 or fail TLS). reuters.com stays whitelisted for citation.
-#   * AP's feeds sit behind Cloudflare bot protection (403 "Just a moment...").
-#   * imf.org blocks non-browser clients (403/429) and ATP Tour's feed returns 403.
-# Re-check with `.probe/feed_probe.py`-style probing before adding a URL back.
+#   * AP (Cloudflare 403), Politico (403), OECD (403), IMF (403/429) and ATP Tour (403)
+#     block non-browser clients; BIS and The Art Newspaper feeds are 404.
+#   * UEFA and The Olympics return HTML, not feeds.
 # ---------------------------------------------------------------------------
 section_titles:
   geopolitics: "Geopolitics"
@@ -86,38 +87,77 @@ section_titles:
 feeds:
   geopolitics:
     - {name: "BBC World", source: bbc.co.uk, url: "https://feeds.bbci.co.uk/news/world/rss.xml"}
+    - {name: "Guardian World", source: theguardian.com, url: "https://www.theguardian.com/world/rss"}
     - {name: "Al Jazeera", source: aljazeera.com, url: "https://www.aljazeera.com/xml/rss/all.xml"}
-    - {name: "CNN World", source: cnn.com, url: "http://rss.cnn.com/rss/edition_world.rss"}  # https endpoint fails TLS
+    - {name: "CNN World", source: cnn.com, url: "http://rss.cnn.com/rss/edition_world.rss"}  # the https endpoint fails TLS
     - {name: "NYT World", source: nytimes.com, url: "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"}
     - {name: "Washington Post World", source: washingtonpost.com, url: "https://feeds.washingtonpost.com/rss/world"}
+    - {name: "Guardian Politics", source: theguardian.com, url: "https://www.theguardian.com/politics/rss"}
     - {name: "BBC Politics", source: bbc.co.uk, url: "https://feeds.bbci.co.uk/news/politics/rss.xml"}
+    - {name: "Sky News World", source: skynews.com, url: "https://feeds.skynews.com/feeds/rss/world.xml"}
+    - {name: "DW World", source: dw.com, url: "https://rss.dw.com/rdf/rss-en-world"}
+    - {name: "France 24", source: france24.com, url: "https://www.france24.com/en/rss"}
+    - {name: "Foreign Policy", source: foreignpolicy.com, url: "https://foreignpolicy.com/feed/"}
+    - {name: "NPR World", source: npr.org, url: "https://www.npr.org/rss/rss.php?id=1004"}
+    - {name: "SCMP", source: scmp.com, url: "https://www.scmp.com/rss/91/feed"}
+    - {name: "Nikkei Asia", source: nikkei.com, url: "https://asia.nikkei.com/rss/feed/nar"}
+    - {name: "WSJ World", source: dj.com, url: "https://feeds.a.dj.com/rss/RSSWorldNews.xml"}
+    - {name: "ABC News International", source: abcnews.go.com, url: "https://abcnews.go.com/abcnews/internationalheadlines"}
   tech:
     - {name: "BBC Technology", source: bbc.co.uk, url: "https://feeds.bbci.co.uk/news/technology/rss.xml"}
+    - {name: "Guardian Technology", source: theguardian.com, url: "https://www.theguardian.com/uk/technology/rss"}
     - {name: "NYT Technology", source: nytimes.com, url: "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml"}
     - {name: "CNBC Technology", source: cnbc.com, url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910"}
     - {name: "Washington Post Tech", source: washingtonpost.com, url: "https://feeds.washingtonpost.com/rss/business/technology"}
     - {name: "Ars Technica", source: arstechnica.com, url: "https://feeds.arstechnica.com/arstechnica/index"}
     - {name: "Nature", source: nature.com, url: "https://www.nature.com/nature.rss"}
+    - {name: "Science", source: science.org, url: "https://www.science.org/rss/news_current.xml"}
+    - {name: "New Scientist", source: newscientist.com, url: "https://www.newscientist.com/feed/home/"}
+    - {name: "MIT Technology Review", source: technologyreview.com, url: "https://www.technologyreview.com/feed/"}
+    - {name: "IEEE Spectrum", source: ieee.org, url: "https://spectrum.ieee.org/feeds/feed.rss"}
+    - {name: "The Verge", source: theverge.com, url: "https://www.theverge.com/rss/index.xml"}
+    - {name: "Wired", source: wired.com, url: "https://www.wired.com/feed/rss"}
   finance:
     - {name: "CNBC Markets", source: cnbc.com, url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664"}
     - {name: "FT Home", source: ft.com, url: "https://www.ft.com/rss/home"}
     - {name: "Bloomberg Markets", source: bloomberg.com, url: "https://feeds.bloomberg.com/markets/news.rss"}
+    - {name: "Guardian Business", source: theguardian.com, url: "https://www.theguardian.com/uk/business/rss"}
     - {name: "BBC Business", source: bbc.co.uk, url: "https://feeds.bbci.co.uk/news/business/rss.xml"}
     - {name: "NYT Business", source: nytimes.com, url: "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml"}
+    - {name: "Washington Post Business", source: washingtonpost.com, url: "https://feeds.washingtonpost.com/rss/business"}
+    - {name: "Economist Business", source: economist.com, url: "https://www.economist.com/business/rss.xml"}
     - {name: "Economist Finance", source: economist.com, url: "https://www.economist.com/finance-and-economics/rss.xml"}
+    - {name: "MarketWatch", source: marketwatch.com, url: "https://www.marketwatch.com/rss/topstories"}
+    - {name: "WSJ Markets", source: dj.com, url: "https://feeds.a.dj.com/rss/RSSMarketsMain.xml"}
   sport:
     - {name: "ESPN News", source: espn.com, url: "https://www.espn.com/espn/rss/news"}
+    - {name: "ESPN Soccer", source: espn.com, url: "https://www.espn.com/espn/rss/soccer/news"}
     - {name: "BBC Sport", source: bbc.co.uk, url: "https://feeds.bbci.co.uk/sport/rss.xml"}
+    - {name: "Guardian Sport", source: theguardian.com, url: "https://www.theguardian.com/sport/rss"}
+    - {name: "Sky Sports", source: skysports.com, url: "https://www.skysports.com/rss/12040"}
     - {name: "Formula 1", source: formula1.com, url: "https://www.formula1.com/en/latest/all.xml"}
+    - {name: "Autosport", source: autosport.com, url: "https://www.autosport.com/rss/feed/all"}
   entertainment:
     - {name: "Deadline", source: deadline.com, url: "https://deadline.com/feed/"}
+    - {name: "Guardian Culture", source: theguardian.com, url: "https://www.theguardian.com/culture/rss"}
+    - {name: "Guardian Film", source: theguardian.com, url: "https://www.theguardian.com/film/rss"}
     - {name: "BBC Entertainment", source: bbc.co.uk, url: "https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml"}
     - {name: "NYT Arts", source: nytimes.com, url: "https://rss.nytimes.com/services/xml/rss/nyt/Arts.xml"}
+    - {name: "Variety", source: variety.com, url: "https://variety.com/feed/"}
+    - {name: "Hollywood Reporter", source: hollywoodreporter.com, url: "https://www.hollywoodreporter.com/feed/"}
+    - {name: "Rolling Stone", source: rollingstone.com, url: "https://www.rollingstone.com/feed/"}
+    - {name: "Pitchfork", source: pitchfork.com, url: "https://pitchfork.com/feed/feed-news/rss"}
+    - {name: "ARTnews", source: artnews.com, url: "https://www.artnews.com/feed/"}
+    - {name: "The New Yorker", source: newyorker.com, url: "https://www.newyorker.com/feed/culture"}
     - {name: "Economist Culture", source: economist.com, url: "https://www.economist.com/culture/rss.xml"}
     - {name: "Nobel Prize", source: nobelprize.org, url: "https://www.nobelprize.org/feed/"}
 
 # ---------------------------------------------------------------------------
 # Artefacts and layout.
+#
+# The deliverable is ONE responsive HTML file. There is no fixed page box and no PDF:
+# "two pages" is a length target (target_sheets) that preflight checks against the
+# estimated rendered length, not a layout constraint that clips content.
 # ---------------------------------------------------------------------------
 paths:
   build_dir: "build"
@@ -127,11 +167,15 @@ paths:
   state_dir: "state"
 
 layout:
-  desktop_template: "brief.html.j2"    # A4 print-first, fixed 210mm
-  mobile_template: "mobile.html.j2"    # responsive screen + exactly two A4 pages in print
+  template: "newspaper.html.j2"        # responsive: phone, laptop, and print
   footer_text: "THE GLOBAL BRIEF | WIRE EDITION"
-  page_count: 2
-  max_pdf_bytes: 52428800              # Telegram sendDocument limit: 50 MB
+  sheets: 2                            # number of sheet sections the template renders
+  target_sheets: 2.0                   # length target, in A4-sheet equivalents
+  # Measured, not guessed: the committed fixture (1 011 words, 13 stories) prints to
+  # exactly two A4 pages, and the worst case allowed by budgets prints to three. The
+  # band accepts both and rejects an edition that is half or double the brief.
+  length_tolerance: 0.7
+  max_document_bytes: 52428800         # Telegram sendDocument limit: 50 MB
   edition_epoch: "2026-01-01"          # edition numbering anchor (issue #1 = AM of this date)
 
 # ---------------------------------------------------------------------------
@@ -141,7 +185,7 @@ telegram:
   api_base: "https://api.telegram.org"
   caption_max_chars: 1024
   caption_parse_mode: "HTML"
-  filename_template: "The-Global-Brief-{date}-{edition}.pdf"
+  filename_template: "The-Global-Brief-{date}-{edition}.html"
   send_delay_seconds: 0.6              # serial + sleeping between documents
   max_retries: 3
   chat_ids: []                         # usually supplied by env TELEGRAM_CHAT_ID

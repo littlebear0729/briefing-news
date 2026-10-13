@@ -27,8 +27,10 @@ __all__ = [
     "iter_urls",
 ]
 
-#: Authoritative outlets only (DESIGN.md §6E). Suffix matching means subdomains
-#: such as ``feeds.bbci.co.uk`` or ``rss.nytimes.com`` are covered.
+#: Authoritative outlets only (DESIGN.md §6E). Suffix matching means subdomains such as
+#: ``feeds.bbci.co.uk`` or ``rss.nytimes.com`` are covered. Every domain here was checked
+#: live on 2026-10-13 together with the feed list in config.yaml; see the note there about
+#: the publishers that have discontinued or blocked public feeds (Reuters, AP, IMF, ATP).
 ALLOWED_DOMAINS: frozenset[str] = frozenset(
     {
         # wire services and broadcasters
@@ -39,13 +41,29 @@ ALLOWED_DOMAINS: frozenset[str] = frozenset(
         "bbci.co.uk",  # the BBC's actual feed host (feeds.bbci.co.uk)
         "aljazeera.com",
         "cnn.com",
-        # newspapers
+        "abcnews.go.com",
+        "npr.org",
+        "cbc.ca",
+        "abc.net.au",
+        "dw.com",
+        "france24.com",
+        "skynews.com",
+        "skysports.com",
+        # newspapers and magazines
         "nytimes.com",
         "washingtonpost.com",
         "ft.com",
         "bloomberg.com",
         "cnbc.com",
         "economist.com",
+        "theguardian.com",
+        "politico.com",
+        "foreignpolicy.com",
+        "scmp.com",
+        "nikkei.com",
+        "marketwatch.com",
+        "dj.com",  # Dow Jones feeds host for WSJ and MarketWatch
+        "newyorker.com",
         # institutions
         "imf.org",
         "nobelprize.org",
@@ -53,10 +71,24 @@ ALLOWED_DOMAINS: frozenset[str] = frozenset(
         "formula1.com",
         "atptour.com",
         "espn.com",
-        # culture / science / technology
+        "autosport.com",
+        # culture
         "deadline.com",
+        "variety.com",
+        "hollywoodreporter.com",
+        "rollingstone.com",
+        "pitchfork.com",
+        "artnews.com",
+        # science and technology
         "nature.com",
+        "science.org",
+        "newscientist.com",
+        "technologyreview.com",
+        "ieee.org",
+        "sciencedaily.com",
         "arstechnica.com",
+        "theverge.com",
+        "wired.com",
     }
 )
 

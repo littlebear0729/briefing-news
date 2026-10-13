@@ -98,7 +98,7 @@ def test_chat_ids_parses_env_and_deduplicates(monkeypatch, config: dict) -> None
 def test_telegram_settings_filename_template(config: dict) -> None:
     settings = telegram_settings(config)
     assert settings["filename_template"].format(date="2026-10-13", edition="AM") == (
-        "The-Global-Brief-2026-10-13-AM.pdf"
+        "The-Global-Brief-2026-10-13-AM.html"
     )
 
 

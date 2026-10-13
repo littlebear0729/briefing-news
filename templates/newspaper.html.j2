@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="{{ meta.title }} — {{ meta.sources_cited }} cited sources, {{ meta.stats.stories }} stories.">
+<title>{{ meta.title }}</title>
+<style>
+{% include "_tokens.j2" %}
+{% include "_layout.j2" %}
+
+/* ==========================================================================
+   Width layouts — phone first, then the fixed 640 / 1024 breakpoints.
+
+   Every rule here is scoped to `screen` so that printing uses the plain print rules
+   in _layout.j2 alone. There is no fixed page box anywhere: the document grows with
+   its content, so nothing is clipped and "two pages" is a length target
+   (layout.target_sheets), checked before delivery by pipeline.preflight.
+   ========================================================================== */
+@media screen {
+
+.front-top,
+.front-bottom,
+.inside-columns,
+.brief-list,
+.key-numbers,
+.bullet-list {
+  display: grid;
+  gap: var(--nm-space-5);
+  grid-template-columns: 1fr;
+}
+
+.lead-body { display: grid; grid-template-columns: 1fr; gap: var(--nm-space-4); }
+.inside-column { display: flex; flex-direction: column; gap: var(--nm-space-5); min-width: 0; }
+
+/* the "inside" index bar: newspaper furniture, not an app nav */
+.screen-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3em 0.9em;
+  align-items: baseline;
+  margin-bottom: var(--nm-space-4);
+  font-family: var(--font-label);
+  font-size: var(--nm-text-2xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-subtle);
+}
+.screen-nav-label { font-weight: var(--nm-weight-bold); color: var(--accent); }
+.screen-nav a { border-bottom: 0; color: var(--ink-muted); }
+.screen-nav a:hover { color: var(--accent); }
+
+} /* end @media screen */
+
+/* ==========================================================================
+   >= 640px — two columns for everything that pairs naturally
+   ========================================================================== */
+@media screen and (min-width: 640px) {
+  .front-top { grid-template-columns: 1.6fr 1fr; align-items: start; }
+  .front-bottom { grid-template-columns: 1fr 1fr; align-items: start; }
+  .front-bottom .section--markets { grid-column: 1 / -1; }
+  .inside-columns { grid-template-columns: 1fr 1fr; align-items: start; }
+  .brief-list { grid-template-columns: 1fr 1fr; }
+  .key-numbers { grid-template-columns: repeat(4, 1fr); }
+  .bullet-list { grid-template-columns: 1fr 1fr; }
+  .lead-body { grid-template-columns: 1fr 1fr; align-items: start; }
+}
+
+/* ==========================================================================
+   >= 1024px — the broadsheet grid
+   ========================================================================== */
+@media screen and (min-width: 1024px) {
+  body { font-size: var(--text-body-lg); }
+  .paper { padding: 2.6rem 3.2rem 2.2rem; }
+
+  .front-top { grid-template-columns: 2.05fr 1fr; gap: var(--nm-space-8); }
+  .front-rail { border-left: var(--rule-thin) solid var(--rule); padding-left: var(--nm-space-6); }
+  .front-bottom { grid-template-columns: 1fr 1fr 1.05fr; gap: var(--nm-space-6); }
+  .front-bottom .story--secondary + .story--secondary,
+  .front-bottom .section--markets { border-left: var(--rule-thin) solid var(--rule); padding-left: var(--nm-space-6); }
+  .front-bottom .section--markets { grid-column: auto; }
+
+  .inside-columns { gap: var(--nm-space-8); }
+  .inside-column + .inside-column { border-left: var(--rule-thin) solid var(--rule); padding-left: var(--nm-space-8); }
+
+  .brief-list { grid-template-columns: 1fr; }
+  .bullet-list { grid-template-columns: 1fr; }
+  .lead-body { gap: var(--nm-space-6); }
+  .para { text-align: justify; }
+}
+</style>
+</head>
+<body>
+{% import "_macros.j2" as macros %}
+<a class="skip-link" href="#sheet-front">Skip to the front page</a>
+
+<div class="paper">
+{% set lead_paras = e.lead.paras | length %}
+{% set lead_split = ((lead_paras + 1) // 2) if lead_paras > 2 else lead_paras %}
+<header class="masthead">
+<div class="masthead-rules">
+<div class="masthead-ornament" aria-hidden="true">{{ assets['masthead-ornament'] }}</div>
+<h1 class="masthead-title">The Global Brief</h1>
+</div>
+<p class="masthead-bar">
+<span>{{ meta.masthead_date }}</span>
+<span>{{ meta.edition_label }}</span>
+<span>{{ meta.issue_label }}</span>
+<span>{{ meta.sources_cited }} sources cited</span>
+</p>
+<p class="masthead-meta">{{ meta.window_line }} · assembled {{ meta.generated_at }}</p>
+</header>
+
+<nav class="screen-nav" aria-label="Sections">
+<span class="screen-nav-label">Inside</span>
+<a href="#technology">Technology</a>
+<a href="#finance">Finance</a>
+<a href="#sport">Sport</a>
+<a href="#culture">Culture</a>
+<a href="#markets">Markets</a>
+<a href="#briefs">Briefs</a>
+</nav>
+
+<section class="sheet" id="sheet-front" data-sheet="1" aria-label="Front page">
+<div class="sheet-head">
+<span class="sheet-head-title">The Front</span>
+<span class="sheet-head-note">{{ meta.stats.stories }} stories · {{ meta.stats.words }} words · about two sheets of newsprint</span>
+</div>
+
+<div class="front-top">
+<article class="story story--lead" id="lead">
+{{ macros.headline_block(e.lead, 'lead-headline', titles['geopolitics']) }}
+<div class="lead-body">
+<div class="lead-col">{{ macros.para_block(e.lead, 'story-paras', 0, lead_split) }}</div>
+<div class="lead-col">{{ macros.para_block(e.lead, 'story-paras', lead_split) }}</div>
+</div>
+{{ macros.source_line(e.lead) }}
+</article>
+
+<aside class="front-rail">
+{{ macros.visual_block(assets['wire-globe'], meta.visual_caption) }}
+{{ macros.briefs_panel(e.briefs, 'Briefs') }}
+</aside>
+</div>
+
+<div class="front-bottom">
+{% for item in e.secondary %}
+{{ macros.story_block(item, titles['geopolitics'], 'secondary-headline', 'story-paras', 'story story--secondary') }}
+{% endfor %}
+{{ macros.markets_panel(e.markets, 'Markets') }}
+</div>
+
+{{ macros.sheet_footer(meta.footer_text, 'Page 1 of 2') }}
+</section>
+
+<section class="sheet" id="sheet-inside" data-sheet="2" aria-label="Page two">
+<span class="sheet-label">Page 2 of 2</span>
+<div class="sheet-head">
+<span class="sheet-head-title">{{ meta.inside_title }}</span>
+<span class="sheet-head-note">{{ meta.inside_note }}</span>
+</div>
+
+<div class="inside-columns">
+<div class="inside-column inside-column--left">
+<section class="section" id="technology" aria-label="{{ titles['tech'] }}">
+<h2 class="section-head"><span>{{ titles['tech'] }}</span><span class="section-head-note">{{ e.tech['stories']|length }} stories</span></h2>
+{% for item in e.tech['stories'] %}
+{{ macros.story_block(item, titles['tech'], 'section-headline' if loop.first else 'culture-headline', 'story-paras', 'story story--tech') }}
+{% endfor %}
+</section>
+
+<section class="section" id="sport" aria-label="{{ titles['sport'] }}">
+<h2 class="section-head"><span>{{ titles['sport'] }}</span><span class="section-head-note">{{ e.sport['bullets']|length }} briefs</span></h2>
+{{ macros.story_block(e.sport['lead'], titles['sport'], 'section-headline', 'story-paras', 'story story--sport-lead') }}
+{{ macros.bullets_panel(e.sport['bullets']) }}
+</section>
+</div>
+
+<div class="inside-column inside-column--right">
+<section class="section" id="finance" aria-label="{{ titles['finance'] }}">
+<h2 class="section-head"><span>{{ titles['finance'] }}</span><span class="section-head-note">{{ 1 + e.money['side']|length }} stories</span></h2>
+{{ macros.story_block(e.money['lead'], titles['finance'], 'section-headline', 'story-paras', 'story story--money-lead') }}
+{% for item in e.money['side'] %}
+{{ macros.story_block(item, titles['finance'], 'culture-headline', 'story-paras', 'story story--money-side') }}
+{% endfor %}
+{{ macros.key_numbers_panel(e.money['key_numbers'][:4], 'Key numbers') }}
+</section>
+
+<section class="section" id="culture" aria-label="{{ titles['entertainment'] }}">
+<h2 class="section-head"><span>{{ titles['entertainment'] }}</span><span class="section-head-note">{{ e.culture|length }} stories</span></h2>
+{% for item in e.culture %}
+{{ macros.story_block(item, titles['entertainment'], 'culture-headline', 'story-paras', 'story story--culture') }}
+{% endfor %}
+</section>
+</div>
+</div>
+
+{{ macros.sheet_footer(meta.footer_text, 'Page 2 of 2') }}
+</section>
+
+<footer class="colophon">
+<p>{{ meta.note }} · {{ meta.stats.sheets.front }} + {{ meta.stats.sheets.inside }} sheet-equivalents (target {{ meta.target_sheets }}) · generated {{ meta.generated_at }}</p>
+<p>Every link points to a whitelisted source domain. This edition was assembled by code from {{ meta.candidates }} candidates: the model chose and wrote, it never chose a URL, a page layout or a word count.</p>
+</footer>
+</div>
+</body>
+</html>

@@ -7,8 +7,11 @@
 #
 # Jobs are split so that no single job holds both secrets (DESIGN.md §6D):
 #   build   : the LLM key, and nothing else that can act on the outside world
-#   publish : the bot token, only after the PDF assertions have passed in build
+#   publish : the bot token, only after the delivered document passed its checks
 #   report  : failure alerting, needs no key of its own beyond the admin chat
+#
+# The artefact is one self-contained HTML file, so there is no browser to install and
+# no PDF toolchain to keep working.
 #
 # Every action is pinned to a commit SHA; the version comment is for humans, the SHA is
 # what actually runs. Renovate/Dependabot can bump both together.
@@ -31,7 +34,7 @@ on:
         type: string
         required: false
       publish:
-        description: "Send the result to Telegram after the assertions pass"
+        description: "Send the result to Telegram after the checks pass"
         type: boolean
         default: true
 
@@ -47,7 +50,7 @@ jobs:
   build:
     name: Build the edition
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 25
     outputs:
       edition: ${{ steps.resolve.outputs.edition }}
       date: ${{ steps.resolve.outputs.date }}
@@ -65,9 +68,6 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
-      - name: Install the print engine
-        run: python -m playwright install --with-deps chromium
 
       # Cron decides the edition: the 13:15 run is PM, everything else is AM. A manual
       # dispatch may override both edition and date, which is the backfill path.
@@ -96,7 +96,7 @@ jobs:
           echo "date=$date" >> "$GITHUB_OUTPUT"
           echo "Building $edition for $date"
 
-      - name: Build, render, print and assert
+      - name: Fetch, edit, render and check
         env:
           EDITION: ${{ steps.resolve.outputs.edition }}
           RUN_DATE: ${{ steps.resolve.outputs.date }}
@@ -108,7 +108,7 @@ jobs:
         run: python -m pipeline.run --edition "$EDITION" --date "$RUN_DATE"
 
       # Audit evidence travels with the run: the candidate pool, the edition JSON the
-      # model produced, both HTML artefacts, both PDFs and the manifest.
+      # model produced, the delivered document and the manifest.
       - name: Upload artefacts
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
@@ -116,7 +116,6 @@ jobs:
           name: brief-${{ steps.resolve.outputs.date }}-${{ steps.resolve.outputs.edition }}
           path: |
             dist/*.html
-            dist/*.pdf
             dist/manifest-*.json
             build/articles-*.json
             build/edition-*.json
@@ -124,7 +123,7 @@ jobs:
           retention-days: 30
 
   publish:
-    name: Send the PDF
+    name: Send the newspaper
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -146,9 +145,9 @@ jobs:
         with:
           name: brief-${{ needs.build.outputs.date }}-${{ needs.build.outputs.edition }}
 
-      # Only what this job needs: no feedparser, no Jinja2, no browser.
+      # Only what this job needs: no feed parser, no browser.
       - name: Install delivery dependencies
-        run: pip install "requests>=2.31" "pypdf>=4.2" "PyYAML>=6.0.1"
+        run: pip install "requests>=2.31" "PyYAML>=6.0.1" "Jinja2>=3.1.4" "jsonschema>=4.21.0"
 
       - name: Send through Telegram
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.publish }}
@@ -163,7 +162,7 @@ jobs:
           # Never let the token near the log: the Bot API URL contains it.
           echo "::add-mask::$TELEGRAM_BOT_TOKEN"
           python -m pipeline.publish \
-            --pdf "dist/mobile-${RUN_DATE}-${EDITION}.pdf" \
+            --html "dist/global-brief-${RUN_DATE}-${EDITION}.html" \
             --edition-json "build/edition-${RUN_DATE}-${EDITION}.json" \
             --date "$RUN_DATE" \
             --edition "$EDITION" \

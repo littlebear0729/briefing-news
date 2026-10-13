@@ -2,15 +2,15 @@
 
 Twice a day the pipeline fetches candidates from a whitelist of authoritative feeds,
 asks a model to *edit* them (choose, order, headline, compress — nothing else), renders
-the result into a two-page A4 newspaper, prints it to PDF, proves the PDF is intact, and
-sends it through a Telegram bot.
+the result into one responsive newspaper page, checks that document, and sends it through
+a Telegram bot as a self-contained HTML file that opens on a phone or a laptop.
 
 **The design rule behind every decision here: code owns everything stable, the model
 owns editorial judgement only.** The model never writes HTML, never writes a URL, never
-decides pagination or word counts. Those are versioned assets, config and code.
+decides layout or word counts. Those are versioned assets, config and code.
 
-- Handover document: [`DESIGN.md`](DESIGN.md)
-- Status against its checklist: [`DESIGN.md` §11](DESIGN.md) *(what is implemented, what is calibrated, what is not)*
+- Handover document: [`DESIGN.md`](DESIGN.md) — §11 is the implementation status, §12 the
+  HTML-only revision
 
 ## Pipeline
 
@@ -21,25 +21,26 @@ sources.py ───┴─▶ fetch.py        build/articles-<date>-<ed>.json   
                        ▼
                   editorial.py    build/edition-<date>-<ed>.json      the ONLY model call
                        │
-        ┌──────────────┴───────────────┐
-        ▼                              ▼
-   render.py                     render_mobile.py
-   dist/global-brief-*.html      dist/mobile-*.html                    same JSON, two artefacts
-        │                              │
-        └──────────────┬───────────────┘
                        ▼
-                  export.py       dist/*.pdf                             print + assertions
+                  render.py       dist/global-brief-<date>-<ed>.html  responsive newspaper
+                       │
                        ▼
-                  publish.py      Telegram sendDocument                 idempotent delivery
+                  preflight.py    structure · every paragraph present · footer per sheet
+                       │          · whitelisted links · length on target
+                       ▼
+                  publish.py      Telegram sendDocument               idempotent delivery
                        ▲
               state/sent.json (ledger, committed back)
 ```
+
+One artefact, one edit, one delivery. There is no PDF and no pagination: the brief asks
+for *about two A4 pages of newspaper*, so length is a measured target rather than a
+layout that clips.
 
 ## Quick start
 
 ```bash
 pip install -r requirements.txt
-python -m playwright install chromium        # print engine
 
 # full edition (needs BRIEF_LLM_API_KEY, and TELEGRAM_* to publish)
 python -m pipeline.run --edition am --publish
@@ -47,20 +48,18 @@ python -m pipeline.run --edition am --publish
 # stage by stage
 python -m pipeline.fetch    --edition am --date 2026-10-13
 python -m pipeline.editorial build/articles-2026-10-13-am.json
-python -m pipeline.render         build/edition-2026-10-13-am.json --date 2026-10-13
-python -m pipeline.render_mobile  build/edition-2026-10-13-am.json --date 2026-10-13
-python -m pipeline.export         dist/mobile-2026-10-13-am.html --check
-python -m pipeline.publish        --pdf dist/mobile-2026-10-13-am.pdf \
-                                  --edition-json build/edition-2026-10-13-am.json \
-                                  --date 2026-10-13 --edition am
+python -m pipeline.render   build/edition-2026-10-13-am.json --date 2026-10-13 --check
+python -m pipeline.publish  --html dist/global-brief-2026-10-13-am.html \
+                            --edition-json build/edition-2026-10-13-am.json \
+                            --date 2026-10-13 --edition am
 ```
 
-No key, no network? Replay the committed fixture — it renders and prints end to end:
+No key, no network? Replay the committed fixture:
 
 ```bash
-python -m pipeline.render_mobile build/edition-2026-10-13-am.json --date 2026-10-13
-python -m pipeline.export dist/mobile-2026-10-13-am.html --check
-python -m pipeline.publish --pdf dist/mobile-2026-10-13-am.pdf --dry-run
+python -m pipeline.render build/edition-2026-10-13-am.json --date 2026-10-13 --check
+open dist/global-brief-2026-10-13-am.html      # or just drag it into a browser
+python -m pipeline.publish --html dist/global-brief-2026-10-13-am.html --dry-run
 ```
 
 ## Tests
@@ -72,11 +71,11 @@ python -m pytest
 
 The suite runs offline and deterministically (a guard fixture fails any test that
 reaches the network). It covers the whitelist, the fetch window/dedupe/caps, the schema
-and citation contract, budget enforcement, both renderers, the PDF assertion gates, the
-Telegram idempotency/retry/token-safety paths, and the manifest. The one test marked
-`print_check` prints the **worst-case** edition (every paragraph at its word limit) in a
-real browser and asserts it is exactly two A4 pages with all content present; it skips
-where no Chromium is available.
+and citation contract, budget enforcement, the newspaper template and its styling
+invariants, the pre-delivery checks (including "a dropped paragraph must fail"), the
+Telegram idempotency/retry/token-safety paths, and the manifest. One test prints the
+worst-case edition through a real Chromium and counts the sheets; it skips where no
+browser is available.
 
 ## Environment
 
@@ -86,49 +85,46 @@ where no Chromium is available.
 | `BRIEF_LLM_BASE_URL` | var | empty string falls back to `config.yaml` |
 | `BRIEF_LLM_MODEL` | var | pin the model version; change it in a PR |
 | `BRIEF_LLM_RETRIES` / `BRIEF_LLM_TEMPERATURE` | var | CI stays at 0–0.2 |
-| `TELEGRAM_BOT_TOKEN` | secret | dedicated bot; never send it to a group chat by accident |
+| `TELEGRAM_BOT_TOKEN` | secret | dedicated bot |
 | `TELEGRAM_CHAT_ID` | secret | comma-separated for several recipients |
 | `TELEGRAM_ADMIN_CHAT_ID` | secret | failure alerts |
-| `BRIEF_PDF_ENGINE` | var | `auto` (default), `playwright`, `chrome` |
-| `BRIEF_CHROME_PATH` | var | explicit browser for the `chrome` engine |
 
-## Layout, print and the calibration
+## The newspaper
 
-Two artefacts, one edition JSON:
+One template (`templates/newspaper.html.j2`) plus shared CSS:
 
-- `templates/brief.html.j2` — print-first; the A4 geometry is always on, so a browser
-  preview *is* the PDF.
-- `templates/mobile.html.j2` — responsive: one column below 640px, two from 640px, the
-  broadsheet grid from 1024px; prints the same two A4 pages as the desktop artefact.
+- **Responsive**, phone first: one column below 640px, two from 640px, the broadsheet
+  grid from 1024px. Breakpoints are fixed and screen-scoped, so they cannot leak into
+  print.
+- **Newspaper furniture**: newsprint paper with a hairline grain, ink rules, a black
+  masthead band, small-caps kickers and section bars, a drop cap on the lead, justified
+  hyphenated body copy, ruled markets table, inline attributions ("— Reuters, AP").
+- **Print** gets its own dense multi-column layout (`@page A4`), so printing the same
+  file gives you an actual two-page paper.
 
-Both share `templates/_pages.j2` (page markup) and `templates/_print.j2` (print
-geometry), which is what keeps the printed paper identical between them.
+Length is checked, not assumed. `pipeline.content.estimate_length` converts an edition
+into A4-sheet equivalents; `layout.target_sheets` (2.0) with `length_tolerance` is the
+band the preflight enforces; `MM_PER_SHEET` is calibrated from a measured print of the
+committed fixture. `tests/test_layout.py` holds both the arithmetic and the measurement.
 
-Three things worth knowing before changing the layout:
+## Sources
 
-1. **No CSS multi-column inside a fixed page box.** A multicol container that cannot fit
-   fragments into new columns — in paged media, extra sheets — so content is dropped by
-   `overflow: hidden` or painted over itself, and `scrollHeight` reports none of it. This
-   was a real defect: the mobile PDF silently lost the lead's last paragraph. Columns are
-   explicit elements instead.
-2. **Page two's columns are packed by code** (`pipeline.content.plan_inside_columns`):
-   the natural section order ends 1 017px into a 1 018px column, wasting a fifth of the
-   page. Greedy largest-first packs the same content into 894px / 894px.
-3. **`config.budgets` is calibrated, not guessed.** The maxima are the largest values
-   whose worst case still fits both boxes. `tests/test_layout.py` enforces that
-   arithmetic and can print it for real.
-
-`export.assert_pdf` is the compensating control for `overflow: hidden`: it asserts the
-page count, the fixed footer on *every* page, and — the part that actually catches
-clipping — that the closing words of every section still appear in the printed file.
+`pipeline/sources.py` is the first gate: nothing enters the pool and nothing reaches the
+page unless its host is on the whitelist (major wires, public broadcasters, serious
+newspapers and journals, official institutions). `pipeline/config.yaml` lists the feeds —
+55 of them across the five sections, every one verified live on 2026-10-13 — and records
+the publishers that have discontinued or blocked public feeds (Reuters, AP, Politico,
+OECD, IMF, ATP) so nobody re-adds them by guessing. Fetching is concurrent with retries:
+one slow publisher cannot hold up the edition, and one blocking publisher cannot empty a
+section.
 
 ## Delivery
 
-`publish.py` sends the mobile PDF with `sendDocument`, one chat at a time, honouring
-Telegram's own `retry_after` on HTTP 429, reopening the file handle for every attempt,
-and recording each delivery in `state/sent.json` keyed `<date>-<EDITION>`. Re-running a
-job therefore does not re-send; `--force` overrides deliberately. The bot token lives in
-the request URL, so no URL is ever logged and every message passes through `redact()`.
+`publish.py` sends the HTML as a document, one chat at a time, honouring Telegram's own
+`retry_after` on HTTP 429, reopening the file handle for every attempt, and recording
+each delivery in `state/sent.json` keyed `<date>-<EDITION>`. Re-running a job therefore
+does not re-send; `--force` overrides deliberately. The bot token lives in the request
+URL, so no URL is ever logged and every message passes through `redact()`.
 
 Recipients must have started a conversation with the bot (`403 bot can't initiate
 conversation`), and the ledger is committed back by the workflow — that commit is what
@@ -138,9 +134,7 @@ makes idempotency survive across runs.
 
 `.github/workflows/daily-brief.yml` runs at 01:15 and 13:15 UTC (the edition cutoffs),
 plus manual dispatch for backfills. Jobs are split so no job holds both secrets: `build`
-(the LLM key) → `publish` (the bot token, after the PDF assertions) → `report` (failure
-alert). All actions are pinned to commit SHAs. GitHub cron is best effort — it can run
-late or drop a run, so don't promise a reader a delivery minute.
-
-`build/articles-*.json` and `build/edition-*.json` are uploaded as artifacts: they are
-the audit evidence for what the model was given and what it produced.
+(the LLM key) → `publish` (the bot token, after the document checks) → `report` (failure
+alert). All actions are pinned to commit SHAs; there is no browser to install.
+`build/articles-*.json` and `build/edition-*.json` are uploaded as artifacts — the audit
+evidence for what the model was given and what it produced.

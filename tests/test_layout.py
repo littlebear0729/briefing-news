@@ -1,11 +1,13 @@
-"""Layout fit: the worst-case edition still prints to exactly two A4 pages.
+"""Length: the edition is about two sheets of newspaper, and it really is.
 
-This is the test that keeps ``config.budgets`` honest. The budgets are calibrated so
-that *every* paragraph at its word limit, every list at its maximum length, still fits
-the two fixed page boxes with the footer on the page it belongs to. If someone raises
-a budget without re-measuring, the worst case no longer fits and this test fails —
-either on the arithmetic check that always runs, or on the real browser print that
-runs whenever a Chromium is available.
+The brief asks for roughly two A4 pages of content without a fixed page size, so length
+is a *target*: `pipeline.content.estimate_length` turns an edition into sheet-equivalents,
+`config.layout.target_sheets` names the target, and the preflight refuses to deliver an
+edition that is half or double it.
+
+The estimator is calibrated against reality: `MM_PER_SHEET` was set from the measured
+print length of the committed fixture (two A4 pages), and the last test here re-measures
+the worst case in a real browser whenever one is available.
 """
 
 from __future__ import annotations
@@ -16,7 +18,8 @@ import json
 import pytest
 
 from pipeline import content as ch
-from pipeline import editorial, export, render
+from pipeline import editorial, preflight, render
+from tests.printprobe import NoBrowser, printed_pages
 
 FILLER = (
     "Officials said the measure would be reviewed after sixty days and that the technical "
@@ -25,19 +28,13 @@ FILLER = (
     "talks who asked not to be identified because the discussions were private"
 ).split()
 
-#: Measured capacity of the two inside columns and the front page, in body words, at the
-#: calibrated print scale. The worst case must stay below these; the numbers come from
-#: tests/test_print.py's measurements, not from a guess.
-FRONT_CAPACITY_WORDS = 700
-INSIDE_CAPACITY_WORDS = 900
-
 
 def sentence(count: int, offset: int = 0) -> str:
     return " ".join(FILLER[(index + offset) % len(FILLER)] for index in range(count)).capitalize() + "."
 
 
 def worst_case(fixture_payload: dict, config: dict) -> dict:
-    """Inflate the fixture to the largest edition the budgets allow."""
+    """The largest edition the budgets allow: every paragraph and list at its maximum."""
     payload = copy.deepcopy(fixture_payload)
     content = payload["content"]
     budgets = config["budgets"]
@@ -94,54 +91,68 @@ def test_worst_case_respects_every_budget(worst: dict, config: dict) -> None:
     assert len(content["briefs"]) <= budgets["brief_count_max"]
 
 
-def test_worst_case_stays_within_the_measured_page_capacity(worst: dict) -> None:
-    counts = ch.word_counts(ch.edition_content(worst))
-    assert counts["front"] <= FRONT_CAPACITY_WORDS, f"front page worst case: {counts}"
-    assert counts["inside"] <= INSIDE_CAPACITY_WORDS, f"inside page worst case: {counts}"
+def test_fixture_is_about_two_sheets(fixture_payload: dict, config: dict) -> None:
+    length = ch.estimate_length(ch.edition_content(fixture_payload))
+    target = config["layout"]["target_sheets"]
+    tolerance = config["layout"]["length_tolerance"]
+    assert target - tolerance <= length["total"] <= target + tolerance, length
 
 
-def test_plan_covers_every_section_exactly_once(worst: dict, config: dict) -> None:
-    plan = ch.plan_inside_columns(ch.edition_content(worst), config)
-    assert sorted(plan["left"] + plan["right"]) == sorted(ch.INSIDE_SECTIONS)
+def test_worst_case_is_still_about_two_sheets(worst: dict, config: dict) -> None:
+    length = ch.estimate_length(ch.edition_content(worst))
+    target = config["layout"]["target_sheets"]
+    tolerance = config["layout"]["length_tolerance"]
+    assert length["total"] <= target + tolerance, f"the worst case would be a {length['total']}-sheet paper"
+    assert length["front"] >= 0.6 and length["inside"] >= 0.6, "both sheets must carry real content"
 
 
-def test_plan_stays_balanced_for_the_worst_case(worst: dict, config: dict) -> None:
-    content = ch.edition_content(worst)
-    weights = ch.estimate_section_weights(content)
-    plan = ch.plan_inside_columns(content, config)
-    left = sum(weights[section] for section in plan["left"])
-    right = sum(weights[section] for section in plan["right"])
-    assert abs(left - right) / max(left, right) < 0.2, f"{left:.0f} vs {right:.0f}"
+def test_estimate_moves_with_the_content(fixture_payload: dict) -> None:
+    content = ch.edition_content(fixture_payload)
+    short = ch.estimate_length(content)["total"]
+
+    longer = copy.deepcopy(content)
+    for _path, story in ch.iter_stories(longer):
+        story["paras"] = story["paras"] + [" ".join(FILLER[:30])]
+    assert ch.estimate_length(longer)["total"] > short
+
+    empty = copy.deepcopy(content)
+    for _path, story in ch.iter_stories(empty):
+        story["paras"] = ["Two words."]
+    assert ch.estimate_length(empty)["total"] < short
 
 
-def test_plan_is_deterministic(worst: dict, config: dict) -> None:
-    content = ch.edition_content(worst)
-    assert ch.plan_inside_columns(content, config) == ch.plan_inside_columns(content, config)
+def test_preflight_rejects_an_edition_that_is_too_long(config: dict, fixture_payload: dict) -> None:
+    """A model that writes twice as much must be caught, not delivered."""
+    generous = copy.deepcopy(config)
+    generous["budgets"] = {
+        **config["budgets"],
+        "lead_paras": 12,
+        "lead_words": 70,
+        "story_paras": 6,
+        "story_words": 60,
+        "brief_count_max": 8,
+        "bullet_words": 40,
+    }
+    payload = copy.deepcopy(fixture_payload)
+    for _path, story in ch.iter_stories(payload["content"]):
+        story["paras"] = story["paras"] * 5
+    rendered = render.render_html(payload, generous)
+    with pytest.raises(preflight.PreflightError) as excinfo:
+        preflight.assert_deliverable(rendered, payload=payload, config=config)
+    assert "sheet-equivalents" in str(excinfo.value)
 
 
-def test_worst_case_renders_both_artefacts(worst: dict, config: dict, tmp_path) -> None:
-    path = tmp_path / "worst.json"
-    path.write_text(json.dumps(worst), encoding="utf-8")
-    _html, desktop = render.run(path, "2026-10-13", "AM", config=config, out=tmp_path / "worst.html")
-    assert desktop.is_file()
-
-
-@pytest.mark.print_check
-def test_worst_case_prints_to_exactly_two_pages(worst: dict, config: dict, tmp_path) -> None:
-    """Print the worst case in a real browser and assert two pages with all content.
-
-    Skipped when no Chromium is reachable (``python -m playwright install chromium``,
-    or a local Chrome/Edge): the cheap capacity assertions above still run.
-    """
+def test_worst_case_prints_to_about_two_a4_pages(worst: dict, config: dict, tmp_path) -> None:
+    """Measured, not estimated: print the worst case and count the sheets."""
     path = tmp_path / "worst.json"
     path.write_text(json.dumps(worst), encoding="utf-8")
     _html, html_path = render.run(path, "2026-10-13", "AM", config=config, out=tmp_path / "worst.html")
     try:
-        pdf = export.to_pdf(html_path)
-    except export.ExportError as exc:  # pragma: no cover - environment dependent
-        pytest.skip(f"no browser available for the print check: {exc}")
+        pages = printed_pages(html_path)
+    except NoBrowser as exc:  # pragma: no cover - environment dependent
+        pytest.skip(f"no browser available for the print measurement: {exc}")
 
-    report = export.assert_pdf(pdf, config=config, required_snippets=export.content_snippets(worst))
-    assert report["pages"] == 2
-    assert report["content_complete"] is True
-    assert report["bytes"] < config["layout"]["max_pdf_bytes"]
+    target = config["layout"]["target_sheets"]
+    assert target - 1 <= pages <= target + 1.5, (
+        f"the worst-case edition printed to {pages} A4 pages; the brief asks for about {target}"
+    )

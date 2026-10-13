@@ -48,9 +48,10 @@ class FakeBot:
 
 
 @pytest.fixture
-def pdf(tmp_path):
-    path = tmp_path / "The-Global-Brief-2026-10-13-AM.pdf"
-    path.write_bytes(b"%PDF-1.4\n" + b"x" * 2048)
+def document(tmp_path):
+    """A stand-in for the rendered HTML deliverable."""
+    path = tmp_path / "global-brief-2026-10-13-am.html"
+    path.write_text("<!doctype html><html><body>" + "<p>copy</p>" * 200 + "</body></html>", encoding="utf-8")
     return path
 
 
@@ -59,12 +60,12 @@ def ledger(tmp_path):
     return tmp_path / "state" / "sent.json"
 
 
-def test_publish_sends_records_state_and_preflights(monkeypatch, pdf, ledger, config) -> None:
+def test_publish_sends_records_state_and_preflights(monkeypatch, document, ledger, config) -> None:
     bot = FakeBot()
     monkeypatch.setattr(publish, "_call", bot)
 
     report = publish.publish(
-        pdf,
+        document,
         ["123", "-100456"],
         token="tok",
         caption="caption",
@@ -76,7 +77,7 @@ def test_publish_sends_records_state_and_preflights(monkeypatch, pdf, ledger, co
     )
 
     assert report["key"] == "2026-10-13-AM"
-    assert report["filename"] == "The-Global-Brief-2026-10-13-AM.pdf"
+    assert report["filename"] == "The-Global-Brief-2026-10-13-AM.html"
     assert [entry["chat_id"] for entry in report["sent"]] == ["123", "-100456"]
     assert bot.methods.count("getMe") == 1
     assert bot.methods.count("getChat") == 2
@@ -87,17 +88,39 @@ def test_publish_sends_records_state_and_preflights(monkeypatch, pdf, ledger, co
     record = state["entries"]["2026-10-13-AM"]["chats"]["123"]
     assert record["message_id"] == 4242
     assert record["file_id"] == "FILE"
-    assert record["bytes"] == pdf.stat().st_size
+    assert record["bytes"] == document.stat().st_size
+    assert record["file_name"] == "The-Global-Brief-2026-10-13-AM.html"
     assert len(record["sha256"]) == 64
 
 
-def test_publish_is_idempotent_across_runs(monkeypatch, pdf, ledger, config, capsys) -> None:
+def test_upload_uses_the_html_content_type(monkeypatch, document, ledger, config) -> None:
+    seen: dict = {}
+
+    def capture(token, api_base, method, *, data=None, files=None, timeout=None):
+        if method == "getMe":
+            return {"ok": True, "result": {"id": 1, "username": "bot"}}
+        if method == "getChat":
+            return {"ok": True, "result": {"id": data["chat_id"], "type": "private"}}
+        if method == "sendDocument":
+            seen["filename"], _handle, seen["mime"] = files["document"]
+            return {"ok": True, "result": {"message_id": 1, "document": {}}}
+        return {"ok": True, "result": {}}
+
+    monkeypatch.setattr(publish, "_call", capture)
+    publish.publish(
+        document, ["1"], token="tok", run_date="2026-10-13", edition="AM", state_file=ledger, delay_seconds=0, config=config
+    )
+    assert seen["mime"] == "text/html"
+    assert seen["filename"].endswith(".html")
+
+
+def test_publish_is_idempotent_across_runs(monkeypatch, document, ledger, config, capsys) -> None:
     bot = FakeBot()
     monkeypatch.setattr(publish, "_call", bot)
     kwargs = dict(token="tok", run_date="2026-10-13", edition="AM", state_file=ledger, delay_seconds=0, config=config)
 
-    first = publish.publish(pdf, ["123"], **kwargs)
-    second = publish.publish(pdf, ["123"], **kwargs)
+    first = publish.publish(document, ["123"], **kwargs)
+    second = publish.publish(document, ["123"], **kwargs)
 
     assert len(first["sent"]) == 1 and not first["skipped"]
     assert not second["sent"] and len(second["skipped"]) == 1
@@ -105,19 +128,19 @@ def test_publish_is_idempotent_across_runs(monkeypatch, pdf, ledger, config, cap
     assert "already delivered" in capsys.readouterr().out
 
 
-def test_publish_force_resends(monkeypatch, pdf, ledger, config) -> None:
+def test_publish_force_resends(monkeypatch, document, ledger, config) -> None:
     bot = FakeBot()
     monkeypatch.setattr(publish, "_call", bot)
     kwargs = dict(token="tok", run_date="2026-10-13", edition="AM", state_file=ledger, delay_seconds=0, config=config)
 
-    publish.publish(pdf, ["123"], **kwargs)
-    forced = publish.publish(pdf, ["123"], force=True, **kwargs)
+    publish.publish(document, ["123"], **kwargs)
+    forced = publish.publish(document, ["123"], force=True, **kwargs)
 
     assert len(forced["sent"]) == 1
     assert bot.methods.count("sendDocument") == 2
 
 
-def test_partial_failure_keeps_the_delivered_chat_recorded(monkeypatch, pdf, ledger, config) -> None:
+def test_partial_failure_keeps_the_delivered_chat_recorded(monkeypatch, document, ledger, config) -> None:
     bot = FakeBot()
     original = bot.__call__
 
@@ -129,7 +152,7 @@ def test_partial_failure_keeps_the_delivered_chat_recorded(monkeypatch, pdf, led
     monkeypatch.setattr(publish, "_call", flaky)
     with pytest.raises(publish.PublishError):
         publish.publish(
-            pdf,
+            document,
             ["first", "second"],
             token="tok",
             run_date="2026-10-13",
@@ -143,11 +166,10 @@ def test_partial_failure_keeps_the_delivered_chat_recorded(monkeypatch, pdf, led
     chats = state["entries"]["2026-10-13-AM"]["chats"]
     assert "first" in chats and "second" not in chats
 
-    # a re-run only retries the chat that is missing
     bot2 = FakeBot()
     monkeypatch.setattr(publish, "_call", bot2)
     report = publish.publish(
-        pdf,
+        document,
         ["first", "second"],
         token="tok",
         run_date="2026-10-13",
@@ -159,7 +181,7 @@ def test_partial_failure_keeps_the_delivered_chat_recorded(monkeypatch, pdf, led
     assert [entry["chat_id"] for entry in report["sent"]] == ["second"]
 
 
-def test_rate_limit_backs_off_for_the_requested_delay(monkeypatch, pdf, config, tmp_path) -> None:
+def test_rate_limit_backs_off_for_the_requested_delay(monkeypatch, document) -> None:
     slept: list[float] = []
     monkeypatch.setattr(publish.time, "sleep", lambda seconds: slept.append(seconds))
     attempts = {"n": 0}
@@ -176,14 +198,14 @@ def test_rate_limit_backs_off_for_the_requested_delay(monkeypatch, pdf, config, 
         return {"ok": True, "result": {"message_id": 1, "document": {"file_name": filename}}}
 
     monkeypatch.setattr(publish, "_call", flaky)
-    response = publish.send_document("tok", "https://api.telegram.org", "123", pdf, filename="x.pdf", retries=3)
+    response = publish.send_document("tok", "https://api.telegram.org", "123", document, filename="x.html", retries=3)
 
     assert response["ok"] and attempts["n"] == 2
     assert slept and slept[0] >= 2.5, f"expected to honour retry_after, slept {slept}"
     assert all(len(blob) > 0 for blob in captured), "each retry must upload a fresh, complete file"
 
 
-def test_retryable_transport_errors_are_retried_and_400_is_not(monkeypatch, pdf) -> None:
+def test_retryable_transport_errors_are_retried_and_400_is_not(monkeypatch, document) -> None:
     slept: list[float] = []
     monkeypatch.setattr(publish.time, "sleep", lambda seconds: slept.append(seconds))
     attempts = {"n": 0}
@@ -195,7 +217,7 @@ def test_retryable_transport_errors_are_retried_and_400_is_not(monkeypatch, pdf)
         return {"ok": True, "result": {"message_id": 3, "document": {}}}
 
     monkeypatch.setattr(publish, "_call", flaky)
-    publish.send_document("tok", "https://api.telegram.org", "1", pdf, filename="x.pdf", retries=3)
+    publish.send_document("tok", "https://api.telegram.org", "1", document, filename="x.html", retries=3)
     assert attempts["n"] == 2 and slept
 
     def chat_not_found(token, api_base, method, *, data=None, files=None, timeout=None):
@@ -203,7 +225,7 @@ def test_retryable_transport_errors_are_retried_and_400_is_not(monkeypatch, pdf)
 
     monkeypatch.setattr(publish, "_call", chat_not_found)
     with pytest.raises(publish.PublishError):
-        publish.send_document("tok", "https://api.telegram.org", "1", pdf, filename="x.pdf", retries=3)
+        publish.send_document("tok", "https://api.telegram.org", "1", document, filename="x.html", retries=3)
 
 
 def test_call_redacts_the_token_from_errors(monkeypatch) -> None:
@@ -233,24 +255,31 @@ def test_call_redacts_the_token_from_errors(monkeypatch) -> None:
     assert "HTTP 401" in message and "TELEGRAM_BOT_TOKEN" in message
 
 
-def test_publish_requires_recipients(pdf, ledger, config) -> None:
+def test_publish_requires_recipients(document, ledger, config) -> None:
     with pytest.raises(publish.PublishError) as excinfo:
-        publish.publish(pdf, [], token="tok", run_date="2026-10-13", edition="AM", state_file=ledger, config=config)
+        publish.publish(document, [], token="tok", run_date="2026-10-13", edition="AM", state_file=ledger, config=config)
     assert "TELEGRAM_CHAT_ID" in str(excinfo.value)
 
 
-def test_publish_requires_an_existing_pdf(ledger, config, tmp_path) -> None:
+def test_publish_requires_an_existing_document(ledger, config, tmp_path) -> None:
     with pytest.raises(publish.PublishError):
-        publish.publish(tmp_path / "nope.pdf", ["1"], token="tok", state_file=ledger, config=config)
+        publish.publish(tmp_path / "nope.html", ["1"], token="tok", state_file=ledger, config=config)
 
 
-def test_dry_run_sends_nothing(monkeypatch, pdf, ledger, config) -> None:
+def test_publish_enforces_the_document_size_limit(document, ledger, config, monkeypatch) -> None:
+    sandboxed = {**config, "layout": {**config["layout"], "max_document_bytes": 128}}
+    with pytest.raises(publish.PublishError) as excinfo:
+        publish.publish(document, ["1"], token="tok", state_file=ledger, config=sandboxed)
+    assert "document limit" in str(excinfo.value)
+
+
+def test_dry_run_sends_nothing(monkeypatch, document, ledger, config) -> None:
     def explode(*args, **kwargs):  # pragma: no cover - must never be called
         raise AssertionError("dry run must not touch the network")
 
     monkeypatch.setattr(publish, "_call", explode)
     report = publish.publish(
-        pdf, ["123"], token="tok", run_date="2026-10-13", edition="AM", state_file=ledger, dry_run=True, config=config
+        document, ["123"], token="tok", run_date="2026-10-13", edition="AM", state_file=ledger, dry_run=True, config=config
     )
     assert report["dry_run"] is True and report["sent"] and not ledger.exists()
 
@@ -263,11 +292,12 @@ def test_caption_is_bounded_and_escaped() -> None:
         lead_headline="Truce & talks <hold>",
         stories=13,
         sources_cited=22,
-        pages=2,
+        sheets=2.0,
     )
     assert "&amp;" in caption and "&lt;hold&gt;" in caption
     assert len(caption) <= 1024
     assert "13 stories" in caption
+    assert "responsive HTML" in caption
 
     long_caption = publish.build_caption(
         edition_label="Morning Edition",

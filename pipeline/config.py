@@ -25,19 +25,20 @@ __all__ = [
     "edition_label",
     "edition_number",
     "env_or",
-    "expected_pages",
+    "expected_sheets",
     "footer_text",
     "id_prefix",
     "layout",
     "load_config",
     "lookback_hours",
-    "max_pdf_bytes",
+    "max_document_bytes",
     "normalize_date",
     "normalize_edition",
     "paths",
     "resolve_model_settings",
     "section_ids",
     "section_title",
+    "target_sheets",
     "telegram_settings",
     "window",
 ]
@@ -271,23 +272,28 @@ def layout(config: Mapping[str, Any]) -> Mapping[str, Any]:
 
 
 def footer_text(config: Mapping[str, Any]) -> str:
-    """The fixed footer string printed on every page.
+    """The fixed footer string printed on every sheet.
 
-    ``export.assert_pdf`` asserts this text is present on *each* page, which is how
-    silent clipping by ``overflow: hidden`` is caught. It is owned by config so the
-    template and the assertion can never drift apart.
+    ``preflight.assert_deliverable`` asserts it appears once per sheet, which is how a
+    template that drops a slot or renders invisible content is caught before delivery.
+    It is owned by config so the template and the check can never drift apart.
     """
     return str(layout(config).get("footer_text") or "THE GLOBAL BRIEF | WIRE EDITION")
 
 
-def expected_pages(config: Mapping[str, Any]) -> int:
-    """Number of pages every artefact must print to (exactly two, by design)."""
-    return int(layout(config).get("page_count", 2))
+def expected_sheets(config: Mapping[str, Any]) -> int:
+    """Number of sheet sections the template must render (two, by design)."""
+    return int(layout(config).get("sheets", 2))
 
 
-def max_pdf_bytes(config: Mapping[str, Any]) -> int:
+def target_sheets(config: Mapping[str, Any]) -> float:
+    """Length target in A4-sheet equivalents; the brief asks for about two."""
+    return float(layout(config).get("target_sheets", 2.0))
+
+
+def max_document_bytes(config: Mapping[str, Any]) -> int:
     """Hard size ceiling for the outgoing document (Telegram's sendDocument limit)."""
-    return int(layout(config).get("max_pdf_bytes", 52428800))
+    return int(layout(config).get("max_document_bytes", 52428800))
 
 
 def telegram_settings(config: Mapping[str, Any]) -> dict[str, Any]:
@@ -301,7 +307,7 @@ def telegram_settings(config: Mapping[str, Any]) -> dict[str, Any]:
         "caption_max_chars": int(telegram.get("caption_max_chars", 1024)),
         "caption_parse_mode": str(telegram.get("caption_parse_mode", "HTML")),
         "filename_template": str(
-            telegram.get("filename_template", "The-Global-Brief-{date}-{edition}.pdf")
+            telegram.get("filename_template", "The-Global-Brief-{date}-{edition}.html")
         ),
         "send_delay_seconds": float(telegram.get("send_delay_seconds", 0.6)),
         "max_retries": int(telegram.get("max_retries", 3)),

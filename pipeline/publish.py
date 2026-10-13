@@ -1,14 +1,19 @@
 """Deliver the edition through a Telegram bot.
 
-    python -m pipeline.publish --pdf dist/mobile-2026-10-13-am.pdf \
+    python -m pipeline.publish --html dist/global-brief-2026-10-13-am.html \
         --date 2026-10-13 --edition am --edition-json build/edition-2026-10-13-am.json
 
-The design rules this stage exists to satisfy (DESIGN.md §6A, §6C):
+The deliverable is one self-contained HTML file, sent as a document (``sendDocument``)
+so the reader gets the newspaper itself rather than a link to it — it opens in any
+browser, on a phone or a laptop.
 
-* **Assertions first.** The PDF must pass :func:`pipeline.export.assert_pdf` (exactly
-  two pages, footer present on both, under the size limit) before a single byte moves.
-* **Idempotent.** ``state/sent.json`` records ``<date>-<EDITION>`` per chat, so a retry
-  of the same job — a re-run, a manual dispatch, a duplicated cron — does not re-send.
+The design rules this stage exists to satisfy (DESIGN.md §6A):
+
+* **Checks first.** The document must pass :func:`pipeline.preflight.assert_deliverable`
+  (structure, every paragraph present, footer per sheet, whitelisted links, length on
+  target) before a single byte moves.
+* **Idempotent.** ``state/sent.json`` records ``<date>-<EDITION>`` per chat, so a retry of
+  the same job — a re-run, a manual dispatch, a duplicated cron — does not re-send.
 * **Serial and polite.** One document at a time with a pause between chats; HTTP 429 is
   answered with Telegram's own ``retry_after``.
 * **Retries reopen the file.** The document handle is opened inside each attempt; a
@@ -33,12 +38,13 @@ from typing import Any, Iterable, Mapping
 from .config import (
     ConfigError,
     load_config,
+    max_document_bytes,
     normalize_date,
     normalize_edition,
     paths,
     telegram_settings,
 )
-from .export import PdfCheckError, assert_pdf
+from .preflight import PreflightError, assert_deliverable
 
 __all__ = [
     "PublishError",
@@ -57,6 +63,7 @@ __all__ = [
 
 STATE_VERSION = 1
 DEFAULT_TIMEOUT = 120.0
+DOCUMENT_MIME = "text/html"
 
 
 class PublishError(RuntimeError):
@@ -138,7 +145,7 @@ def _record(
     run_date: dt.date | str,
     edition: str,
     filename: str,
-    pdf: Path,
+    file_path: Path,
     response: Mapping[str, Any],
 ) -> None:
     entries = state.setdefault("entries", {})
@@ -151,14 +158,14 @@ def _record(
         },
     )
     result = (response.get("result") or {}) if isinstance(response, Mapping) else {}
-    document = result.get("document") or {}
+    sent = result.get("document") or {}
     entry["chats"][str(chat_id)] = {
         "message_id": result.get("message_id"),
-        "file_id": document.get("file_id"),
-        "file_unique_id": document.get("file_unique_id"),
-        "file_name": document.get("file_name") or filename,
-        "bytes": pdf.stat().st_size,
-        "sha256": hashlib.sha256(pdf.read_bytes()).hexdigest(),
+        "file_id": sent.get("file_id"),
+        "file_unique_id": sent.get("file_unique_id"),
+        "file_name": sent.get("file_name") or filename,
+        "bytes": file_path.stat().st_size,
+        "sha256": hashlib.sha256(file_path.read_bytes()).hexdigest(),
         "sent_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
     }
 
@@ -261,7 +268,7 @@ def send_document(
     token: str,
     api_base: str,
     chat_id: str,
-    pdf: str | Path,
+    document_path: str | Path,
     *,
     filename: str,
     caption: str | None = None,
@@ -270,9 +277,9 @@ def send_document(
     timeout: float = DEFAULT_TIMEOUT,
 ) -> dict[str, Any]:
     """Upload the document, retrying transient failures with a fresh file handle."""
-    document = Path(pdf)
+    document = Path(document_path)
     if not document.is_file():
-        raise PublishError(f"pdf not found: {document}")
+        raise PublishError(f"document not found: {document}")
 
     attempts = max(1, int(retries))
     last_error: Exception | None = None
@@ -286,7 +293,7 @@ def send_document(
             # Opened inside the loop on purpose: a handle already consumed by a failed
             # upload would send a truncated (or empty) document on the next attempt.
             with document.open("rb") as handle:
-                files = {"document": (filename, handle, "application/pdf")}
+                files = {"document": (filename, handle, DOCUMENT_MIME)}
                 response = _call(token, api_base, "sendDocument", data=payload, files=files, timeout=timeout)
             message_id = ((response.get("result") or {}).get("message_id"))
             print(f"sent {filename} to chat {chat_id} (message_id={message_id}, {document.stat().st_size:,} bytes)")
@@ -322,7 +329,7 @@ def build_caption(
     lead_headline: str | None = None,
     stories: int | None = None,
     sources_cited: int | None = None,
-    pages: int = 2,
+    sheets: float = 2.0,
     extra: str | None = None,
     max_chars: int = 1024,
     parse_mode: str | None = "HTML",
@@ -347,7 +354,7 @@ def build_caption(
         stats.append(f"{stories} stories")
     if sources_cited:
         stats.append(f"{sources_cited} sources cited")
-    stats.append(f"{pages} pages, A4")
+    stats.append(f"about {sheets:g} pages of newsprint, responsive HTML")
     lines.append(" · ".join(stats))
     if extra:
         lines.append(esc(extra))
@@ -366,7 +373,7 @@ def caption_from_edition(
     max_chars: int = 1024,
     parse_mode: str | None = "HTML",
 ) -> str:
-    """Build the caption from the edition JSON, using the same metadata the pages use."""
+    """Build the caption from the edition JSON, using the same metadata the document uses."""
     from . import content as content_helpers  # noqa: PLC0415 - avoids a cycle at import time
     from .render import build_meta  # noqa: PLC0415
 
@@ -391,7 +398,7 @@ def caption_from_edition(
         lead_headline=str(lead.get("headline") or "") or None,
         stories=meta["stats"]["stories"],
         sources_cited=meta["sources_cited"],
-        pages=meta["page_count"],
+        sheets=meta["target_sheets"],
         extra=meta.get("note"),
         max_chars=max_chars,
         parse_mode=parse_mode,
@@ -404,7 +411,7 @@ def caption_from_edition(
 
 
 def publish(
-    pdf: str | Path,
+    document_path: str | Path,
     chat_ids: list[str],
     *,
     token: str,
@@ -422,15 +429,21 @@ def publish(
     max_caption_chars: int = 1024,
     config: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Send *pdf* to every chat that has not received this edition yet.
+    """Send the edition document to every chat that has not received it yet.
 
     Returns a report: ``{"key", "sent": [...], "skipped": [...], "failed": [...],
     "chat_ids": [...], "filename": ...}``.
     """
     config = config or load_config()
-    document = Path(pdf)
+    document = Path(document_path)
     if not document.is_file():
-        raise PublishError(f"pdf not found: {document}")
+        raise PublishError(f"document not found: {document}")
+    size_limit = max_document_bytes(config)
+    if document.stat().st_size > size_limit:
+        raise PublishError(
+            f"{document} is {document.stat().st_size:,} bytes, over the {size_limit:,}-byte "
+            "document limit (Telegram sendDocument)"
+        )
 
     if not chat_ids:
         raise PublishError(
@@ -441,7 +454,10 @@ def publish(
     date = normalize_date(run_date)
     resolved_edition = normalize_edition(edition)
     key = state_key(date, resolved_edition)
-    template = str((config.get("telegram") or {}).get("filename_template") or "The-Global-Brief-{date}-{edition}.pdf")
+    template = str(
+        (config.get("telegram") or {}).get("filename_template")
+        or "The-Global-Brief-{date}-{edition}.html"
+    )
     document_name = filename or template.format(date=date.isoformat(), edition=resolved_edition)
     if caption and len(caption) > max_caption_chars:
         caption = caption[: max(0, max_caption_chars - 1)].rstrip() + "…"
@@ -501,7 +517,7 @@ def publish(
             run_date=date,
             edition=resolved_edition,
             filename=document_name,
-            pdf=document,
+            file_path=document,
             response=response,
         )
         # Saved after every chat: a crash halfway through must not resend the rest.
@@ -524,18 +540,18 @@ def publish(
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Send the edition PDF through the Telegram bot")
-    parser.add_argument("--pdf", required=True, help="PDF to send")
+    parser = argparse.ArgumentParser(description="Send the edition HTML through the Telegram bot")
+    parser.add_argument("--html", required=True, help="HTML document to send")
     parser.add_argument("--date", default=None, help="run date, YYYY-MM-DD (default: today UTC)")
     parser.add_argument("--edition", default="am", choices=["am", "pm", "AM", "PM"])
     parser.add_argument("--chat-id", action="append", default=None, help="recipient (repeatable; default from env/config)")
     parser.add_argument("--caption", default=None, help="caption text (ignored when --edition-json is given)")
     parser.add_argument("--caption-file", default=None, help="file containing the caption")
-    parser.add_argument("--edition-json", default=None, help="edition JSON to build the caption from")
+    parser.add_argument("--edition-json", default=None, help="edition JSON: caption + document checks")
     parser.add_argument("--filename", default=None, help="document name shown in Telegram")
     parser.add_argument("--state", default=None, help="ledger path (default: state/sent.json)")
     parser.add_argument("--force", action="store_true", help="send even if the ledger says it was delivered")
-    parser.add_argument("--skip-pdf-check", action="store_true", help="do not assert page count/footer/size")
+    parser.add_argument("--skip-checks", action="store_true", help="do not run the pre-delivery checks")
     parser.add_argument("--dry-run", action="store_true", help="report what would be sent, send nothing")
     parser.add_argument("--config", default=None)
     args = parser.parse_args(argv)
@@ -546,13 +562,15 @@ def main(argv: list[str] | None = None) -> int:
         recipients = args.chat_id or settings["chat_ids"]
         run_date = normalize_date(args.date)
 
-        if not args.dry_run and not args.skip_pdf_check:
-            snippets = None
-            if args.edition_json:
-                from .export import content_snippets  # noqa: PLC0415
-
-                snippets = content_snippets(json.loads(Path(args.edition_json).read_text(encoding="utf-8")))
-            assert_pdf(args.pdf, config=config, required_snippets=snippets)
+        if not args.dry_run and not args.skip_checks:
+            if not args.edition_json:
+                parser.error("--skip-checks is only valid together with a real --edition-json check")
+            html_text = Path(args.html).read_text(encoding="utf-8")
+            assert_deliverable(
+                html_text,
+                payload=json.loads(Path(args.edition_json).read_text(encoding="utf-8")),
+                config=config,
+            )
 
         caption = None
         if args.edition_json:
@@ -570,7 +588,7 @@ def main(argv: list[str] | None = None) -> int:
             caption = args.caption
 
         publish(
-            args.pdf,
+            args.html,
             recipients,
             token=settings["token"],
             caption=caption,
@@ -587,7 +605,7 @@ def main(argv: list[str] | None = None) -> int:
             max_caption_chars=settings["caption_max_chars"],
             config=config,
         )
-    except (ConfigError, PublishError, PdfCheckError) as exc:
+    except (ConfigError, PublishError, PreflightError) as exc:
         message = redact(exc, os.environ.get("TELEGRAM_BOT_TOKEN", ""))
         print(f"error: {message}", file=sys.stderr)
         if not args.dry_run:

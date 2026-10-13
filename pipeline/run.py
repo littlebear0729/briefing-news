@@ -1,11 +1,15 @@
 """Run the whole edition end to end.
 
-    python -m pipeline.run --edition am [--date YYYY-MM-DD] [--no-pdf] [--publish]
+    python -m pipeline.run --edition am [--date YYYY-MM-DD] [--publish] [--dry-run]
 
-Stages, in order: fetch -> editorial (the single LLM call) -> desktop render ->
-mobile render -> PDF export -> PDF assertions -> manifest. ``--publish`` adds the
-Telegram delivery at the end; the daily workflow deliberately keeps publishing in a
-separate job that only holds the bot token (DESIGN.md §6D).
+Stages, in order: fetch -> editorial (the single LLM call) -> render the responsive
+newspaper HTML -> preflight checks -> manifest. ``--publish`` adds the Telegram
+delivery at the end; the daily workflow deliberately keeps publishing in a separate job
+that only holds the bot token (DESIGN.md §6D).
+
+The deliverable is one HTML document. There is no PDF step and no pagination: length is
+a target (``layout.target_sheets``) that the preflight verifies, not a constraint the
+layout enforces by clipping.
 
 The manifest (``dist/manifest-<date>-<edition>.json``) is written even when a stage
 fails, so a failed night still leaves an auditable record of what happened.
@@ -35,9 +39,9 @@ from .config import (
     telegram_settings,
 )
 from .editorial import EditorialError
-from .export import ExportError, PdfCheckError, assert_pdf, content_snippets, to_pdf
 from .fetch import FetchError
-from .render import RenderError, build_meta
+from .preflight import PreflightError, assert_deliverable
+from .render import RenderError, build_meta, run as render_run
 
 __all__ = ["EditionRunError", "main", "run_edition"]
 
@@ -58,11 +62,12 @@ def _describe(path: Path | None) -> dict[str, Any] | None:
     if path is None or not Path(path).is_file():
         return None
     file = Path(path)
-    return {
-        "path": str(file.relative_to(Path.cwd())) if str(file).startswith(str(Path.cwd())) else str(file),
-        "bytes": file.stat().st_size,
-        "sha256": _sha256(file),
-    }
+    relative = str(file)
+    try:
+        relative = str(file.relative_to(Path.cwd()))
+    except ValueError:  # pragma: no cover - paths outside the working tree
+        pass
+    return {"path": relative, "bytes": file.stat().st_size, "sha256": _sha256(file)}
 
 
 def run_edition(
@@ -71,15 +76,14 @@ def run_edition(
     *,
     config: Mapping[str, Any] | None = None,
     config_path: str | Path | None = None,
-    make_pdf: bool = True,
-    make_mobile: bool = True,
     publish_after: bool = False,
+    dry_run: bool = False,
     reuse_archive: bool = False,
     llm_response: str | Path | Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Execute every stage for one edition and return the manifest."""
-    # Imported here so that `--no-pdf` runs never need feedparser or playwright.
-    from . import editorial, fetch, publish as publish_stage, render, render_mobile
+    # Imported here so a fetch-only or render-only run never needs the others' deps.
+    from . import editorial, fetch, publish as publish_stage
 
     config = config or load_config(config_path)
     resolved_edition = normalize_edition(edition)
@@ -102,25 +106,27 @@ def run_edition(
             "sha": os.environ.get("GITHUB_SHA"),
         },
         "artifacts": {},
-        "pdf_checks": {},
+        "checks": {},
         "warnings": [],
         "stages": stages,
         "publish": None,
         "ok": False,
     }
 
-    def stage(name: str, action: Callable[[], Any], *, detail: str | None = None) -> Any:
+    def stage(name: str, action: Callable[[], Any]) -> Any:
         began = time.monotonic()
         record: dict[str, Any] = {"name": name, "status": "ok"}
         try:
             result = action()
         except Exception as exc:
-            record.update(status="failed", seconds=round(time.monotonic() - began, 2), error=f"{type(exc).__name__}: {exc}")
+            record.update(
+                status="failed",
+                seconds=round(time.monotonic() - began, 2),
+                error=f"{type(exc).__name__}: {exc}",
+            )
             stages.append(record)
             raise
         record["seconds"] = round(time.monotonic() - began, 2)
-        if detail:
-            record["detail"] = detail
         stages.append(record)
         return result
 
@@ -138,7 +144,13 @@ def run_edition(
         for section in empty_sections:
             message = f"{section}: no candidates in this window — the feed list may have rotted"
             manifest["warnings"].append(message)
-            print(f"::warning::{message}" if os.environ.get("GITHUB_ACTIONS") else f"warning: {message}", file=sys.stderr)
+            print(
+                f"::warning::{message}"
+                if os.environ.get("GITHUB_ACTIONS")
+                else f"warning: {message}",
+                file=sys.stderr,
+            )
+
         manifest["candidates"] = sum(len(items) for items in (archive.get("sections") or {}).values())
 
         edition_path = stage(
@@ -147,20 +159,11 @@ def run_edition(
         )
         manifest["artifacts"]["edition"] = _describe(Path(edition_path))
 
-        desktop_html_path: Path | None = None
-        mobile_html_path: Path | None = None
-
-        _html, desktop_html_path = stage(
-            "render-desktop", lambda: render.run(edition_path, date, resolved_edition, config=config)
+        # Render, then check the document before anything is allowed to send it.
+        html, html_path = stage(
+            "render", lambda: render_run(edition_path, date, resolved_edition, config=config)
         )
-        manifest["artifacts"]["desktop_html"] = _describe(desktop_html_path)
-
-        if make_mobile:
-            mobile_html_path = stage(
-                "render-mobile",
-                lambda: render_mobile.run(edition_path, date, resolved_edition, None, None, config=config),
-            )
-            manifest["artifacts"]["mobile_html"] = _describe(mobile_html_path)
+        manifest["artifacts"]["html"] = _describe(html_path)
 
         payload = json.loads(Path(edition_path).read_text(encoding="utf-8"))
         content = content_helpers.edition_content(payload)
@@ -180,28 +183,13 @@ def run_edition(
         manifest["budget_report"] = payload.get("budget_report")
         manifest["model"] = payload.get("model")
         manifest["usage"] = payload.get("usage")
-
-        if make_pdf:
-            # The closing words of every section: if a fixed page box clips, these are
-            # what disappears, and no layout measurement would show it (DESIGN.md §6C).
-            snippets = content_snippets(payload)
-            for label, html_path in (("desktop", desktop_html_path), ("mobile", mobile_html_path)):
-                if html_path is None:
-                    continue
-                pdf_path = stage(f"pdf-{label}", lambda path=html_path: to_pdf(path))
-                manifest["artifacts"][f"{label}_pdf"] = _describe(Path(pdf_path))
-                report = stage(
-                    f"assert-{label}",
-                    lambda path=pdf_path: assert_pdf(path, config=config, required_snippets=snippets),
-                )
-                manifest["pdf_checks"][label] = report
+        manifest["checks"]["deliverable"] = stage(
+            "check-document",
+            lambda: assert_deliverable(html, payload=payload, config=config),
+        )
 
         if publish_after:
             settings = telegram_settings(config)
-            attachment = manifest["artifacts"].get("mobile_pdf") or manifest["artifacts"].get("desktop_pdf")
-            if not attachment:
-                raise EditionRunError("--publish needs a PDF; do not combine it with --no-pdf")
-            pdf_path = Path(attachment["path"])
             from .publish import caption_from_edition
 
             caption = caption_from_edition(
@@ -215,7 +203,7 @@ def run_edition(
             manifest["publish"] = stage(
                 "publish",
                 lambda: publish_stage.publish(
-                    pdf_path,
+                    html_path,
                     settings["chat_ids"],
                     token=settings["token"],
                     caption=caption,
@@ -223,6 +211,7 @@ def run_edition(
                     run_date=date,
                     edition=resolved_edition,
                     parse_mode=settings["caption_parse_mode"] or None,
+                    dry_run=dry_run,
                     delay_seconds=settings["send_delay_seconds"],
                     retries=settings["max_retries"],
                     max_caption_chars=settings["caption_max_chars"],
@@ -237,8 +226,7 @@ def run_edition(
         EditionRunError,
         EditorialError,
         RenderError,
-        ExportError,
-        PdfCheckError,
+        PreflightError,
         FetchError,
     ) as exc:
         manifest["error"] = f"{type(exc).__name__}: {exc}"
@@ -257,9 +245,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--edition", required=True, choices=["am", "pm", "AM", "PM"])
     parser.add_argument("--date", default=None, help="run date, YYYY-MM-DD (default: today UTC)")
     parser.add_argument("--config", default=None)
-    parser.add_argument("--no-pdf", action="store_true", help="skip Playwright/PDF export and its assertions")
-    parser.add_argument("--no-mobile", action="store_true", help="skip the responsive artefact")
-    parser.add_argument("--publish", action="store_true", help="send the mobile PDF after the assertions pass")
+    parser.add_argument("--publish", action="store_true", help="send the HTML after the checks pass")
+    parser.add_argument("--dry-run", action="store_true", help="with --publish: report, send nothing")
     parser.add_argument("--reuse-archive", action="store_true", help="reuse an existing build/articles-*.json")
     parser.add_argument(
         "--llm-response",
@@ -272,9 +259,8 @@ def main(argv: list[str] | None = None) -> int:
         args.edition,
         args.date,
         config_path=args.config,
-        make_pdf=not args.no_pdf,
-        make_mobile=not args.no_mobile,
         publish_after=args.publish,
+        dry_run=args.dry_run,
         reuse_archive=args.reuse_archive,
         llm_response=args.llm_response,
     )

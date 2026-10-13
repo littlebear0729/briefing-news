@@ -1,10 +1,6 @@
 {#-
-  Content-block macros shared by both templates.
-
-  Both artefacts render the SAME editorial JSON through the SAME blocks, so a
-  layout bug can only ever be a CSS bug — never a divergence between the print
-  and the mobile edition. Layout lives in _print.j2 (print geometry) and in each
-  template's own screen CSS; these macros emit semantics only.
+  Content-block macros. Layout lives in _layout.j2 and in newspaper.html.j2's
+  responsive rules; these emit semantics only.
 
   Reminder (invariant 8): `trim_blocks`/`lstrip_blocks` are on, and Jinja resolves
   `x.markets.items` as the dict method — always write `e.markets['items']`.
@@ -14,14 +10,16 @@
 <p class="kicker">{{ item.kicker if item.kicker else section_title }}</p>
 {%- endmacro %}
 
-{#- `with_extras` is a print-layout decision (deck + dateline), not an editorial one:
-    the inside page affords the full treatment to section leads only. The copy itself
-    stays in the edition JSON and is still shown on screen. -#}
-{% macro headline_block(item, headline_class, section_title, with_extras=true) -%}
+{% macro headline_block(item, headline_class, section_title) -%}
 {{ kicker_line(item, section_title) }}
 <h3 class="{{ headline_class }}">{{ item.headline }}</h3>
-{% if with_extras and item.deck %}<p class="deck">{{ item.deck }}</p>{% endif %}
-{% if with_extras and item.dateline %}<p class="dateline">{{ item.dateline }}</p>{% endif %}
+{% if item.deck %}<p class="deck">{{ item.deck }}</p>{% endif %}
+{% if item.dateline %}<p class="dateline">{{ item.dateline }}</p>{% endif %}
+{%- endmacro %}
+
+{#- A newspaper attribution — "— Reuters, AP" — rather than a line of its own. -#}
+{% macro source_inline(item) -%}
+{% if item.sources %}<span class="sources">— {% for source in item.sources %}<a class="source-link" href="{{ source.url }}" rel="noopener noreferrer">{{ source.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</span>{% endif %}
 {%- endmacro %}
 
 {% macro source_line(item) -%}
@@ -32,14 +30,6 @@
 {% endif %}
 {%- endmacro %}
 
-{#- Inline citation, appended to the last paragraph: a newspaper attribution
-    ("- Reuters, AP") rather than a line of its own. Thirteen separate source lines
-    cost roughly 150px of a two-column inside page, which is the difference between
-    fitting the worst-case edition and clipping it. -#}
-{% macro source_inline(item) -%}
-{% if item.sources %}<span class="sources sources--inline">— {% for source in item.sources %}<a class="source-link" href="{{ source.url }}" rel="noopener noreferrer">{{ source.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</span>{% endif %}
-{%- endmacro %}
-
 {% macro para_block(item, paras_class, start=0, end=None, with_sources=false) -%}
 <div class="{{ paras_class }}">
 {% for para in item.paras[start:end] %}
@@ -48,10 +38,10 @@
 </div>
 {%- endmacro %}
 
-{% macro story_block(item, section_title, headline_class, paras_class, with_sources, story_class='story', with_extras=true) -%}
+{% macro story_block(item, section_title, headline_class, paras_class, story_class='story') -%}
 <article class="{{ story_class }}">
-{{ headline_block(item, headline_class, section_title, with_extras) }}
-{{ para_block(item, paras_class, 0, None, with_sources) }}
+{{ headline_block(item, headline_class, section_title) }}
+{{ para_block(item, paras_class, 0, None, true) }}
 </article>
 {%- endmacro %}
 
@@ -63,7 +53,7 @@
 {%- endmacro %}
 
 {% macro briefs_panel(briefs, heading) -%}
-<section class="section section--briefs" aria-label="{{ heading }}">
+<section class="section section--briefs" id="briefs" aria-label="{{ heading }}">
 <h2 class="section-head"><span>{{ heading }}</span></h2>
 <ul class="brief-list">
 {% for brief in briefs %}
@@ -77,7 +67,7 @@
 {%- endmacro %}
 
 {% macro markets_panel(markets, heading) -%}
-<section class="section section--markets" aria-label="{{ heading }}">
+<section class="section section--markets" id="markets" aria-label="{{ heading }}">
 <h2 class="section-head"><span>{{ heading }}</span></h2>
 <ul class="market-list">
 {% for market in markets['items'] %}
@@ -112,45 +102,9 @@
 </ul>
 {%- endmacro %}
 
-{% macro page_footer(footer_text, page_label) -%}
-<footer class="page-footer">
+{% macro sheet_footer(footer_text, label) -%}
+<footer class="sheet-footer">
 <span class="footer-text">{{ footer_text }}</span>
-<span class="page-label">{{ page_label }}</span>
+<span class="sheet-page">{{ label }}</span>
 </footer>
-{%- endmacro %}
-
-{#- One section of the inside page. Which column it lands in is decided by code
-    (pipeline.content.plan_inside_columns) because the natural section order does not
-    pack into two fixed-height columns: the layout has to be computed, not guessed. -#}
-{% macro inside_section(section_id, edition, titles) -%}
-{% if section_id == 'technology' %}
-<section class="section" id="technology" aria-label="{{ titles['tech'] }}">
-<h2 class="section-head"><span>{{ titles['tech'] }}</span><span class="section-head-note">{{ edition.tech['stories']|length }} stories</span></h2>
-{% for item in edition.tech['stories'] %}
-{{ story_block(item, titles['tech'], 'section-headline' if loop.first else 'culture-headline', 'story-paras', true, 'story story--tech', loop.first) }}
-{% endfor %}
-</section>
-{% elif section_id == 'sport' %}
-<section class="section" id="sport" aria-label="{{ titles['sport'] }}">
-<h2 class="section-head"><span>{{ titles['sport'] }}</span><span class="section-head-note">{{ edition.sport['bullets']|length }} briefs</span></h2>
-{{ story_block(edition.sport['lead'], titles['sport'], 'section-headline', 'story-paras', true, 'story story--sport-lead', true) }}
-{{ bullets_panel(edition.sport['bullets']) }}
-</section>
-{% elif section_id == 'finance' %}
-<section class="section" id="finance" aria-label="{{ titles['finance'] }}">
-<h2 class="section-head"><span>{{ titles['finance'] }}</span><span class="section-head-note">{{ 1 + edition.money['side']|length }} stories</span></h2>
-{{ story_block(edition.money['lead'], titles['finance'], 'section-headline', 'story-paras', true, 'story story--money-lead', true) }}
-{% for item in edition.money['side'] %}
-{{ story_block(item, titles['finance'], 'culture-headline', 'story-paras', true, 'story story--money-side', false) }}
-{% endfor %}
-{{ key_numbers_panel(edition.money['key_numbers'][:4], 'Key numbers') }}
-</section>
-{% else %}
-<section class="section" id="culture" aria-label="{{ titles['entertainment'] }}">
-<h2 class="section-head"><span>{{ titles['entertainment'] }}</span><span class="section-head-note">{{ edition.culture|length }} stories</span></h2>
-{% for item in edition.culture %}
-{{ story_block(item, titles['entertainment'], 'culture-headline', 'story-paras', true, 'story story--culture', false) }}
-{% endfor %}
-</section>
-{% endif %}
 {%- endmacro %}
