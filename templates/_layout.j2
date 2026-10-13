@@ -75,8 +75,28 @@ button:focus-visible,
   padding-top: var(--nm-space-1);
 }
 
-.masthead-ornament { color: var(--ink-subtle); margin: 0 auto var(--nm-space-2); max-width: 34rem; }
-.masthead-ornament svg { display: block; width: 100%; height: 3.4mm; }
+/* Nameplate rule: a hairline pair with a small diamond, drawn in CSS.
+   No image file, no request, and nothing for a model to ever author. */
+.masthead-rule {
+  display: block;
+  position: relative;
+  max-width: 34rem;
+  height: 0.5em;
+  margin: 0 auto var(--nm-space-2);
+  border-top: var(--rule-thin) solid var(--rule-strong);
+  border-bottom: var(--rule-thin) solid var(--rule-strong);
+}
+
+.masthead-rule::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.6em;
+  height: 0.6em;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: var(--accent);
+}
 
 .masthead-title {
   font-family: var(--font-display);
@@ -256,25 +276,6 @@ button:focus-visible,
   color: var(--ink-subtle);
 }
 
-/* ---------- illustration ---------- */
-.visual {
-  border-top: var(--rule-thin) solid var(--rule-strong);
-  border-bottom: var(--rule-thin) solid var(--rule-strong);
-  padding: var(--nm-space-3) 0;
-  margin-bottom: var(--nm-space-4);
-  text-align: center;
-}
-.visual svg { display: block; width: auto; max-width: 100%; max-height: 42vh; margin: 0 auto; color: var(--ink-subtle); }
-.visual-caption {
-  margin-top: var(--nm-space-2);
-  font-family: var(--font-label);
-  font-size: var(--nm-text-2xs);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-subtle);
-  text-align: left;
-}
-
 /* ---------- briefs digest ---------- */
 .section--briefs { background: var(--paper-raised); border: var(--rule-thin) solid var(--rule); padding: var(--nm-space-3); }
 .section--briefs .section-head { border-top: 0; margin-bottom: var(--nm-space-2); }
@@ -388,7 +389,7 @@ button:focus-visible,
 
   .masthead { margin-bottom: 3mm; }
   .masthead-title { font-size: 26pt; }
-  .masthead-ornament { margin-bottom: 1mm; }
+  .masthead-rule { height: 2.4mm; margin-bottom: 1.2mm; max-width: none; }
   .masthead-bar { font-size: 6pt; padding: 0.3em 0.5em; gap: 0.25em 0.8em; }
   .masthead-meta { font-size: 5.6pt; margin-top: 1mm; }
 
@@ -410,9 +411,6 @@ button:focus-visible,
   .story + .story { margin-top: 2.4mm; }
   .section + .section { margin-top: 3mm; }
   .section-head { margin-bottom: 1.6mm; padding: 0.15em 0 0.2em; font-size: 6.4pt; }
-  .visual { padding: 1.6mm 0; margin-bottom: 3mm; }
-  .visual svg { max-height: 30mm; }
-  .visual-caption { font-size: 5.2pt; margin-top: 1mm; }
 
   /* front page: lead beside the rail, then the second band as a two-column flow */
   .front-top { display: grid; grid-template-columns: 1.7fr 1fr; gap: 4mm; align-items: start; }

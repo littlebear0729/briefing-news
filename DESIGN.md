@@ -20,7 +20,7 @@ LLM 永远不生成 HTML、永远不写 URL、永远不决定版式与分页。
 | # | 需求 | 现状 | 负责文件 |
 |---|---|---|---|
 | 1 | 权威来源（AP/BBC/CNN/Al Jazeera/Reuters…），覆盖地缘政治/科技/金融/体育/娱乐 | ✅ 已实现。域名白名单 + 每节 RSS，5 个 section | `pipeline/sources.py`、`pipeline/config.yaml` |
-| 2 | A4 两页正反、报纸版式、大小标题、可插图 | ✅ 已实现，两套模板 | `templates/brief.html.j2`、`templates/mobile.html.j2` |
+| 2 | A4 两页正反、报纸版式、大小标题、可插图 | ✅ 报纸版式与大小标题；**§12 修订：不再固定 A4 版面、不再有插图**，改为一份响应式 HTML（篇幅约两张 A4） | `templates/newspaper.html.j2`、`templates/_layout.j2` |
 | 3 | 响应式网页，手机 + 电脑都能读 | ✅ 已实现（640 / 1024 两档断点） | `templates/mobile.html.j2` |
 | 4 | 输出文件通过 Telegram bot 发送给用户 | ✅ **已实现** | `pipeline/publish.py`、`state/sent.json` |
 | 5 | GitHub Actions 自动化，env 配置 LLM endpoint/model/token + TG bot token/chatid | ✅ **已实现**（AM/PM cron、手动补发、build/publish 拆 job、按 SHA 钉版本） | `.github/workflows/daily-brief.yml` |
@@ -70,7 +70,7 @@ sources.py ───┘        │
 | 写 `headline` / `kicker` / `deck` / `dateline` | **引用解析**（LLM 只出 `source_ids`，代码换成名称+URL） |
 | 把摘要**压缩**成 wire 体正文 | JSON schema 校验 + 出错回灌重试 |
 | 某节候选不足时从相邻节补（prompt 里已写明） | **字数/段数预算的最终执行**（prompt 只是告知） |
-| | 版式、CSS、分页、SVG 插图（版本化资产，从不生成） |
+| | 版式、CSS、分页与长度、报头花边（版本化资产，从不生成） |
 | | 日期、期号、文件名、manifest |
 | | PDF 导出、Telegram 发送、secret、超时、重试、回写仓库 |
 
@@ -276,14 +276,14 @@ python -m pipeline.export mobile.html               # 单独导出 PDF
 | `pipeline/fetch.py` | 抓取→候选池；时间窗、按 URL/标题去重、每节封顶、id 生成、feed 审计 |
 | `pipeline/editorial.py` | 唯一的 LLM 调用：`EDITION_SCHEMA`、`SYSTEM_PROMPT`、重试回灌、`_resolve_sources`、`_enforce_budgets` |
 | `pipeline/content.py` | 遍历 edition 的公共槽位、词数统计、**页二分栏规划**（见 §11.3） |
-| `pipeline/render.py` | 桌面 A4 产物、`build_meta`、`_collect_source_names`、`edition_number`、SVG 资产内联 |
+| `pipeline/render.py` | 唯一渲染入口：`build_meta`、`_collect_source_names`、`edition_number`、长度与白名单检查 |
 | `pipeline/render_mobile.py` | 响应式产物；`load_payload` / `check_allowlist` / `validate` / `check_prose` |
 | `pipeline/export.py` | `to_pdf`（Playwright 优先，Chrome/Edge 回退）、`assert_pdf`、`content_snippets` |
 | `pipeline/publish.py` | `sendDocument` 投递、幂等账本、429 退避、重试重开文件、token 脱敏、失败告警 |
 | `pipeline/run.py` | 编排 + `dist/manifest-*.json`（失败也写） |
 | `templates/_tokens.j2`、`_print.j2`、`_macros.j2`、`_pages.j2` | 令牌、打印几何、内容宏、两页标记（两套模板共用） |
 | `templates/brief.html.j2`、`mobile.html.j2` | 桌面（打印优先，恒定 210mm）与响应式（640/1024 断点） |
-| `assets/*.svg` | 版本化插图（报头花边、线框地球），`stroke="currentColor"`，不含颜色字面量 |
+| ~~`assets/*.svg`~~ | **已删除（见 §12.4）**：插图与报头花边都不再使用图片文件；花边改为纯 CSS 绘制 |
 | `tests/`、`pytest.ini` | 123 个测试，全离线（有网络守卫）；`print_check` 标记的测试真开浏览器打印 |
 | `.github/workflows/daily-brief.yml` | AM/PM cron + 手动补发 + build/publish/report 三 job，action 按 SHA 钉版本 |
 | `state/sent.json` | 投递账本（幂等），由 publish job 回写仓库 |
@@ -365,7 +365,7 @@ feed 实测：19 个 feed 全部 HTTP 200 且能解析出条目（geopolitics/te
 
 | # | 新需求 | 本版做法 |
 |---|---|---|
-| 1 | 只输出 HTML，不要 PDF；响应式，手机和电脑都能读 | 删除 `export.py`、`render_mobile.py` 与全部 PDF 断言；产物是**一份自包含 HTML**（内联 CSS、内联 SVG、零外部请求、零脚本），`publish` 用 `sendDocument` 发 HTML（`text/html`）。`render.py` 成为唯一渲染入口；`preflight.py` 接管交付前的全部检查 |
+| 1 | 只输出 HTML，不要 PDF；响应式，手机和电脑都能读 | 删除 `export.py`、`render_mobile.py` 与全部 PDF 断言；产物是**一份自包含 HTML**（内联 CSS、零外部请求、零脚本、零图片），`publish` 用 `sendDocument` 发 HTML（`text/html`）。`render.py` 成为唯一渲染入口；`preflight.py` 接管交付前的全部检查 |
 | 2 | 不要求固定 A4 页面尺寸，"篇幅差不多两个 A4"即可 | **取消固定页盒**（无 `height: 297mm`、无 `overflow: hidden`）→ 结构上不可能再发生裁剪。长度变成**目标**：`content.estimate_length` 把一期折算成"A4 张数"，`layout.target_sheets: 2.0 ± 0.7`，由 preflight 强制。常数 `MM_PER_SHEET` 由实测标定：fixture 打印恰好 2 页 |
 | 3 | 排版与背景更像报纸出版物 | 新闻纸底色 `--paper #f5f0e3` + 细颗粒纹理（两层 repeating-linear-gradient，无图片请求）、墨色重规线、黑色报头横条、小体大写 kicker/栏目标题、导语首字下沉、两端对齐 + 断词、行情表格线、行内署名"—— Reuters, AP"。打印走**独立的多栏密排**（`@page A4`、8.3pt、栏线），所以同一份 HTML 打出来就是一张真正的两页报纸 |
 | 4 | 补充更多权威信源（RSS） | 白名单扩到 **51 个域名**、feed 扩到 **55 条**（geopolitics 17 / tech 13 / finance 11 / sport 7 / entertainment 13），全部在 2026-10-13 实测可用。抓取改为**并发 + 重试**（8 线程；实测 21 秒完成 55 条，五节各 12 条候选）；单一来源被墙不会清空某节 |
@@ -399,3 +399,26 @@ screen @1440px：fixture 文档高 4090px ≈ 3.6 个 A4 高度（屏幕字号�
 实时抓取：55 条 feed、60 条候选（五节各 12）、21 秒
 颜色字面量：`:root` 之外 0 处；断点仅 640/1024；`:focus-visible` + `var(--focus-ring)` 齐备
 ```
+
+### 12.4 去掉插图（用户要求，2026-10-13）
+
+需求原话："不用加插图了，把插图删了吧"。做法：
+
+- 删除 `assets/`（`wire-globe.svg` 首页插图、`masthead-ornament.svg` 报头花边）以及整套资源加载机制：
+  `render.load_assets()`、`render_html(assets=...)`、`meta.visual_caption`、`paths["asset_dir"]`、
+  config 的 `asset_dir`、`macros.visual_block()`、`.visual*` 样式（含打印覆盖）。
+- 报头花边改用**纯 CSS** 画（`.masthead-rule`：上下两条细线 + 居中的红色小菱形，`transform: rotate(45deg)`），
+  所以"有插图的观感"没了，但报头依旧是报纸那种双细线 + 饰点的样子，且交付物里**没有任何图片、SVG、data URI**。
+- 长度模型随之更新：去掉 `MM_ILLUSTRATION`（首页少 62mm），并用实测重新标定
+  `MM_PER_SHEET = 376`（fixture：估算 2.00 张 ↔ 实测打印 2 页 A4，正好对齐）。
+
+实测（两份产物都验过）：
+
+```
+fixture  AM：preflight ok · estimate 2.00 张 · 打印 2 页 · 165,431 bytes
+实时信源 PM：preflight ok · estimate 1.76 张 · 打印 2 页 · 162,782 bytes
+两份文档：<svg> 0 个、<figure> 0 个、<img> 0 个、data:image 0 处、脚本 0 个、外部请求 0 个
+```
+
+> 不变式 1 依旧成立，含义略变：版式（含那条花边）仍是版本化资产、仍由代码拥有；
+> 只是"资产"从 SVG 文件变成了模板里的 CSS 规则。

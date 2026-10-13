@@ -88,5 +88,4 @@ def sandbox_config(config: dict, tmp_path: Path) -> dict:
     for key in ("build_dir", "dist_dir", "state_dir"):
         sandboxed["paths"][key] = str(tmp_path / key)
     sandboxed["paths"]["template_dir"] = str(ROOT / "templates")
-    sandboxed["paths"]["asset_dir"] = str(ROOT / "assets")
     return sandboxed

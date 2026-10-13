@@ -163,7 +163,6 @@ paths:
   build_dir: "build"
   dist_dir: "dist"
   template_dir: "templates"
-  asset_dir: "assets"
   state_dir: "state"
 
 layout:

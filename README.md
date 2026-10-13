@@ -99,6 +99,8 @@ One template (`templates/newspaper.html.j2`) plus shared CSS:
 - **Newspaper furniture**: newsprint paper with a hairline grain, ink rules, a black
   masthead band, small-caps kickers and section bars, a drop cap on the lead, justified
   hyphenated body copy, ruled markets table, inline attributions ("— Reuters, AP").
+  The nameplate rule is drawn in CSS, and there are no illustrations or images anywhere:
+  the document is text, CSS and source links (a test enforces that).
 - **Print** gets its own dense multi-column layout (`@page A4`), so printing the same
   file gives you an actual two-page paper.
 

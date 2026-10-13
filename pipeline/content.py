@@ -271,13 +271,11 @@ MM_PER_MARKET_ROW = 7.0
 MM_PER_KEY_NUMBER_ROW = 13.0
 MM_PER_BULLET = 5.5
 MM_MASTHEAD = 38.0
-MM_ILLUSTRATION = 62.0
 #: How much of the above one printed A4 sheet turns out to hold, measured rather than
 #: derived: the committed fixture (1 011 words, 13 stories, 4 briefs) prints to exactly
-#: two A4 pages at newspaper density, and sums to 810mm here — hence 405.
-#: Re-calibration recipe: render an edition, print it through a browser, count pages,
-#: then set this to (this edition's millimetres / pages).
-MM_PER_SHEET = 405.0
+#: two A4 pages at newspaper density. Re-calibration recipe: render an edition, print it
+#: through a browser, count pages, then set this to (this edition's millimetres / pages).
+MM_PER_SHEET = 376.0
 
 
 def _story_length(story: Mapping[str, Any], *, extras: bool) -> float:
@@ -305,7 +303,6 @@ def estimate_length(content: Mapping[str, Any]) -> dict[str, float]:
     for story in content.get("secondary") or []:
         if isinstance(story, Mapping):
             front += _story_length(story, extras=True)
-    front += MM_ILLUSTRATION
     for brief in content.get("briefs") or []:
         if isinstance(brief, Mapping):
             front += MM_PER_BRIEF + count_words(brief.get("text")) * MM_PER_WORD

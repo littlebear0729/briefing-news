@@ -71,6 +71,15 @@ def test_focus_visibility_uses_the_token(document: dict) -> None:
     assert ":focus-visible" in css and "var(--focus-ring)" in css
 
 
+def test_document_contains_no_images(document: dict) -> None:
+    """The brief asks for no illustrations: text, rules and links only."""
+    html = document["html"]
+    assert "<svg" not in html and "<img" not in html and "<figure" not in html
+    assert "data:image" not in html
+    assert "url(" not in styles(html), "no background images or webfonts"
+    assert "class=\"visual" not in html.replace('class="visually-hidden"', "")
+
+
 def test_responsive_breakpoints_are_fixed_and_screen_scoped(document: dict) -> None:
     css = styles(document["html"])
     assert "@media screen and (min-width: 640px)" in css

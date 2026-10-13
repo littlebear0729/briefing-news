@@ -45,13 +45,6 @@
 </article>
 {%- endmacro %}
 
-{% macro visual_block(asset, caption) -%}
-<figure class="visual">
-{{ asset }}
-<figcaption class="visual-caption">{{ caption }}</figcaption>
-</figure>
-{%- endmacro %}
-
 {% macro briefs_panel(briefs, heading) -%}
 <section class="section section--briefs" id="briefs" aria-label="{{ heading }}">
 <h2 class="section-head"><span>{{ heading }}</span></h2>

@@ -100,7 +100,7 @@
 {% set lead_split = ((lead_paras + 1) // 2) if lead_paras > 2 else lead_paras %}
 <header class="masthead">
 <div class="masthead-rules">
-<div class="masthead-ornament" aria-hidden="true">{{ assets['masthead-ornament'] }}</div>
+<span class="masthead-rule" aria-hidden="true"></span>
 <h1 class="masthead-title">The Global Brief</h1>
 </div>
 <p class="masthead-bar">
@@ -139,7 +139,6 @@
 </article>
 
 <aside class="front-rail">
-{{ macros.visual_block(assets['wire-globe'], meta.visual_caption) }}
 {{ macros.briefs_panel(e.briefs, 'Briefs') }}
 </aside>
 </div>

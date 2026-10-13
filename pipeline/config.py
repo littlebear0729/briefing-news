@@ -254,7 +254,6 @@ def paths(config: Mapping[str, Any], root: str | os.PathLike[str] | None = None)
         "build_dir": base / str(configured.get("build_dir", "build")),
         "dist_dir": base / str(configured.get("dist_dir", "dist")),
         "template_dir": base / str(configured.get("template_dir", "templates")),
-        "asset_dir": base / str(configured.get("asset_dir", "assets")),
         "state_dir": base / str(configured.get("state_dir", "state")),
     }
     return resolved
