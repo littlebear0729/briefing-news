@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.deps/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Pipeline output
+# build/ holds per-run archives and editions; the one exception is the committed
+# offline fixture the tests and the README rely on.
+build/*
+!build/edition-2026-10-13-am.json
+# dist/ products (HTML, PDF, manifest) travel as Actions artefacts, not as commits:
+# two PDFs a day is a few hundred MB a year for no review value.
+dist/
+mobile.html
+mobile.pdf
+
+# Local scratch (probes, manual print tests)
+.probe/
+tmp/
+*.local.*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

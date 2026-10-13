@@ -1,0 +1,147 @@
+# The Global Brief — pipeline configuration.
+#
+# Everything stable lives here. The LLM never sees this file: it receives only a
+# candidate pool (ids + titles + summaries) and returns editorial JSON with
+# source_ids. Feeds, time windows, caps and budgets are code-owned (DESIGN.md §3).
+
+# ---------------------------------------------------------------------------
+# Editions: a UTC cutoff per edition. The candidate window is
+#   (cutoff - lookback_hours, cutoff]  and is applied in fetch.py.
+# Cron in the workflow fires a few minutes before each cutoff.
+# ---------------------------------------------------------------------------
+editions:
+  AM:
+    label: "Morning Edition"
+    cutoff_utc: "01:15"
+  PM:
+    label: "Evening Edition"
+    cutoff_utc: "13:15"
+
+lookback_hours: 12          # window length; per-edition override allowed below
+
+# ---------------------------------------------------------------------------
+# Budgets — enforced in code (_enforce_budgets), never trusted to the prompt.
+# The prompt is merely told about them so the first attempt is usually close.
+#
+# These maxima are CALIBRATED, not guessed: they are the largest values whose
+# worst case (every paragraph at its word limit, every list at its maximum
+# length) still prints to exactly two A4 pages with the fixed footer on both.
+# tests/test_layout.py builds that worst-case edition, and tests/test_print.py
+# prints it in a real browser when one is available. Raising a number here
+# without re-running those tests is how a page starts silently clipping.
+# ---------------------------------------------------------------------------
+budgets:
+  section_cap: 12           # hard cap of candidates per section (fetch.py)
+  lead_paras: 4             # the front-page lead only
+  lead_words: 44            # per paragraph
+  story_paras: 2            # every other story, including money.lead and sport.lead
+  story_words: 26           # per paragraph
+  brief_count_min: 3
+  brief_count_max: 4
+  brief_words: 24
+  bullet_words: 16
+  headline_words: 8
+  kicker_words: 4
+  deck_words: 12
+  dateline_words: 5
+  summary_chars: 800        # RSS summaries are untrusted input; truncated
+
+# ---------------------------------------------------------------------------
+# Model endpoint. Every value can be overridden by environment variables
+# (BRIEF_LLM_BASE_URL / BRIEF_LLM_MODEL / BRIEF_LLM_RETRIES /
+#  BRIEF_LLM_TEMPERATURE). An EMPTY env value falls back to the default here.
+# Exactly ONE LLM call per edition feeds both the print and the mobile artefact.
+# ---------------------------------------------------------------------------
+model:
+  base_url: "https://api.deepseek.com/v1"
+  name: "deepseek/deepseek-v4-flash"
+  retries: 3
+  temperature: 0.1          # CI stays at 0-0.2; editorial calls are not creative writing
+  timeout_seconds: 120
+  json_mode: true           # ask for a JSON object response
+  max_summary_chars_in_prompt: 600
+
+# ---------------------------------------------------------------------------
+# Candidate pool. Only whitelisted domains survive fetch.py (sources.py is the
+# gate; render_mobile re-checks before rendering).
+#
+# Every URL below was verified live (HTTP 200, entries parsed) on 2026-10-13. Feeds
+# rot silently, which is why the pipeline warns per empty section instead of quietly
+# printing a thinner paper.
+#
+# Known dead ends, verified the same day — do not "fix" these by guessing:
+#   * Reuters has discontinued public RSS (all /arc/outboundfeeds and feeds.reuters.com
+#     endpoints return 404 or fail TLS). reuters.com stays whitelisted for citation.
+#   * AP's feeds sit behind Cloudflare bot protection (403 "Just a moment...").
+#   * imf.org blocks non-browser clients (403/429) and ATP Tour's feed returns 403.
+# Re-check with `.probe/feed_probe.py`-style probing before adding a URL back.
+# ---------------------------------------------------------------------------
+section_titles:
+  geopolitics: "Geopolitics"
+  tech: "Technology"
+  finance: "Markets & Finance"
+  sport: "Sport"
+  entertainment: "Culture"
+
+feeds:
+  geopolitics:
+    - {name: "BBC World", source: bbc.co.uk, url: "https://feeds.bbci.co.uk/news/world/rss.xml"}
+    - {name: "Al Jazeera", source: aljazeera.com, url: "https://www.aljazeera.com/xml/rss/all.xml"}
+    - {name: "CNN World", source: cnn.com, url: "http://rss.cnn.com/rss/edition_world.rss"}  # https endpoint fails TLS
+    - {name: "NYT World", source: nytimes.com, url: "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"}
+    - {name: "Washington Post World", source: washingtonpost.com, url: "https://feeds.washingtonpost.com/rss/world"}
+    - {name: "BBC Politics", source: bbc.co.uk, url: "https://feeds.bbci.co.uk/news/politics/rss.xml"}
+  tech:
+    - {name: "BBC Technology", source: bbc.co.uk, url: "https://feeds.bbci.co.uk/news/technology/rss.xml"}
+    - {name: "NYT Technology", source: nytimes.com, url: "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml"}
+    - {name: "CNBC Technology", source: cnbc.com, url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910"}
+    - {name: "Washington Post Tech", source: washingtonpost.com, url: "https://feeds.washingtonpost.com/rss/business/technology"}
+    - {name: "Ars Technica", source: arstechnica.com, url: "https://feeds.arstechnica.com/arstechnica/index"}
+    - {name: "Nature", source: nature.com, url: "https://www.nature.com/nature.rss"}
+  finance:
+    - {name: "CNBC Markets", source: cnbc.com, url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664"}
+    - {name: "FT Home", source: ft.com, url: "https://www.ft.com/rss/home"}
+    - {name: "Bloomberg Markets", source: bloomberg.com, url: "https://feeds.bloomberg.com/markets/news.rss"}
+    - {name: "BBC Business", source: bbc.co.uk, url: "https://feeds.bbci.co.uk/news/business/rss.xml"}
+    - {name: "NYT Business", source: nytimes.com, url: "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml"}
+    - {name: "Economist Finance", source: economist.com, url: "https://www.economist.com/finance-and-economics/rss.xml"}
+  sport:
+    - {name: "ESPN News", source: espn.com, url: "https://www.espn.com/espn/rss/news"}
+    - {name: "BBC Sport", source: bbc.co.uk, url: "https://feeds.bbci.co.uk/sport/rss.xml"}
+    - {name: "Formula 1", source: formula1.com, url: "https://www.formula1.com/en/latest/all.xml"}
+  entertainment:
+    - {name: "Deadline", source: deadline.com, url: "https://deadline.com/feed/"}
+    - {name: "BBC Entertainment", source: bbc.co.uk, url: "https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml"}
+    - {name: "NYT Arts", source: nytimes.com, url: "https://rss.nytimes.com/services/xml/rss/nyt/Arts.xml"}
+    - {name: "Economist Culture", source: economist.com, url: "https://www.economist.com/culture/rss.xml"}
+    - {name: "Nobel Prize", source: nobelprize.org, url: "https://www.nobelprize.org/feed/"}
+
+# ---------------------------------------------------------------------------
+# Artefacts and layout.
+# ---------------------------------------------------------------------------
+paths:
+  build_dir: "build"
+  dist_dir: "dist"
+  template_dir: "templates"
+  asset_dir: "assets"
+  state_dir: "state"
+
+layout:
+  desktop_template: "brief.html.j2"    # A4 print-first, fixed 210mm
+  mobile_template: "mobile.html.j2"    # responsive screen + exactly two A4 pages in print
+  footer_text: "THE GLOBAL BRIEF | WIRE EDITION"
+  page_count: 2
+  max_pdf_bytes: 52428800              # Telegram sendDocument limit: 50 MB
+  edition_epoch: "2026-01-01"          # edition numbering anchor (issue #1 = AM of this date)
+
+# ---------------------------------------------------------------------------
+# Delivery.
+# ---------------------------------------------------------------------------
+telegram:
+  api_base: "https://api.telegram.org"
+  caption_max_chars: 1024
+  caption_parse_mode: "HTML"
+  filename_template: "The-Global-Brief-{date}-{edition}.pdf"
+  send_delay_seconds: 0.6              # serial + sleeping between documents
+  max_retries: 3
+  chat_ids: []                         # usually supplied by env TELEGRAM_CHAT_ID

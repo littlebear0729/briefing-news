@@ -1,0 +1,240 @@
+# The Global Brief — twice-daily build and delivery.
+#
+# Two cron entries, one per edition, because GitHub cron cannot express "twice a day"
+# in a single schedule. They fire at the edition cutoffs defined in pipeline/config.yaml
+# (AM 01:15 UTC, PM 13:15 UTC). GitHub's scheduler is best effort: it can run late, and
+# under load it can skip a run entirely — use the manual dispatch below to backfill.
+#
+# Jobs are split so that no single job holds both secrets (DESIGN.md §6D):
+#   build   : the LLM key, and nothing else that can act on the outside world
+#   publish : the bot token, only after the PDF assertions have passed in build
+#   report  : failure alerting, needs no key of its own beyond the admin chat
+#
+# Every action is pinned to a commit SHA; the version comment is for humans, the SHA is
+# what actually runs. Renovate/Dependabot can bump both together.
+
+name: Daily Brief
+
+on:
+  schedule:
+    - cron: "15 1 * * *"   # AM edition (cutoff 01:15 UTC)
+    - cron: "15 13 * * *"  # PM edition (cutoff 13:15 UTC)
+  workflow_dispatch:
+    inputs:
+      edition:
+        description: "Edition to build"
+        type: choice
+        options: [auto, am, pm]
+        default: auto
+      date:
+        description: "Run date (YYYY-MM-DD, blank = today in UTC)"
+        type: string
+        required: false
+      publish:
+        description: "Send the result to Telegram after the assertions pass"
+        type: boolean
+        default: true
+
+# A manual dispatch and a cron run can overlap, and both write state/sent.json back.
+concurrency:
+  group: daily-brief
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build the edition
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      edition: ${{ steps.resolve.outputs.edition }}
+      date: ${{ steps.resolve.outputs.date }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install the print engine
+        run: python -m playwright install --with-deps chromium
+
+      # Cron decides the edition: the 13:15 run is PM, everything else is AM. A manual
+      # dispatch may override both edition and date, which is the backfill path.
+      - name: Resolve edition and date
+        id: resolve
+        env:
+          INPUT_EDITION: ${{ inputs.edition }}
+          INPUT_DATE: ${{ inputs.date }}
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ -n "${INPUT_EDITION:-}" ] && [ "${INPUT_EDITION}" != "auto" ]; then
+            edition="$INPUT_EDITION"
+          elif [ "${SCHEDULE:-}" = "15 13 * * *" ]; then
+            edition="pm"
+          else
+            edition="am"
+          fi
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ -n "${INPUT_DATE:-}" ]; then
+            date="$INPUT_DATE"
+          else
+            date="$(date -u +%Y-%m-%d)"
+          fi
+          echo "edition=$edition" >> "$GITHUB_OUTPUT"
+          echo "date=$date" >> "$GITHUB_OUTPUT"
+          echo "Building $edition for $date"
+
+      - name: Build, render, print and assert
+        env:
+          EDITION: ${{ steps.resolve.outputs.edition }}
+          RUN_DATE: ${{ steps.resolve.outputs.date }}
+          BRIEF_LLM_API_KEY: ${{ secrets.BRIEF_LLM_API_KEY }}
+          BRIEF_LLM_BASE_URL: ${{ vars.BRIEF_LLM_BASE_URL }}
+          BRIEF_LLM_MODEL: ${{ vars.BRIEF_LLM_MODEL }}
+          BRIEF_LLM_RETRIES: ${{ vars.BRIEF_LLM_RETRIES }}
+          BRIEF_LLM_TEMPERATURE: "0.1"   # editorial calls are not creative writing
+        run: python -m pipeline.run --edition "$EDITION" --date "$RUN_DATE"
+
+      # Audit evidence travels with the run: the candidate pool, the edition JSON the
+      # model produced, both HTML artefacts, both PDFs and the manifest.
+      - name: Upload artefacts
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: brief-${{ steps.resolve.outputs.date }}-${{ steps.resolve.outputs.edition }}
+          path: |
+            dist/*.html
+            dist/*.pdf
+            dist/manifest-*.json
+            build/articles-*.json
+            build/edition-*.json
+          if-no-files-found: warn
+          retention-days: 30
+
+  publish:
+    name: Send the PDF
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Only this job may write to the repository, and only to record what was delivered.
+    permissions:
+      contents: write
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Download the built edition
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          name: brief-${{ needs.build.outputs.date }}-${{ needs.build.outputs.edition }}
+
+      # Only what this job needs: no feedparser, no Jinja2, no browser.
+      - name: Install delivery dependencies
+        run: pip install "requests>=2.31" "pypdf>=4.2" "PyYAML>=6.0.1"
+
+      - name: Send through Telegram
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.publish }}
+        env:
+          EDITION: ${{ needs.build.outputs.edition }}
+          RUN_DATE: ${{ needs.build.outputs.date }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
+        run: |
+          set -euo pipefail
+          # Never let the token near the log: the Bot API URL contains it.
+          echo "::add-mask::$TELEGRAM_BOT_TOKEN"
+          python -m pipeline.publish \
+            --pdf "dist/mobile-${RUN_DATE}-${EDITION}.pdf" \
+            --edition-json "build/edition-${RUN_DATE}-${EDITION}.json" \
+            --date "$RUN_DATE" \
+            --edition "$EDITION" \
+            --state state/sent.json
+
+      # The ledger is the difference between "re-run the job" and "the user gets the
+      # paper twice", so it is committed back rather than kept inside the runner.
+      - name: Record what was delivered
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ ! -f state/sent.json ]; then
+            echo "no ledger to commit"
+            exit 0
+          fi
+          git config user.name "global-brief-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add state/sent.json
+          if git diff --cached --quiet; then
+            echo "ledger unchanged"
+            exit 0
+          fi
+          git commit -m "state: record delivery of ${RUN_DATE} ${EDITION}"
+          for attempt in 1 2 3; do
+            if git pull --rebase --autostash && git push; then
+              exit 0
+            fi
+            echo "push attempt $attempt failed; retrying"
+            sleep 5
+          done
+          echo "::error::could not commit state/sent.json — idempotency is now at risk"
+          exit 1
+
+  report:
+    name: Report a failure
+    needs: [build, publish]
+    if: failure()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Alert the admin chat
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          echo "::add-mask::$TELEGRAM_BOT_TOKEN"
+          pip install "requests>=2.31"
+          python - <<'PY'
+          import os
+          from pipeline.publish import notify_admin
+
+          token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+          admin = os.environ.get("TELEGRAM_ADMIN_CHAT_ID", "")
+          url = os.environ.get("RUN_URL", "")
+          text = (
+              "The Global Brief build failed.\n"
+              f"Workflow run: {url}\n"
+              "Nothing was sent to readers; the ledger still considers this edition unsent."
+          )
+          if not notify_admin(token, admin, text):
+              print("::warning::no admin chat configured; the failure is only visible in Actions")
+          PY

@@ -1,0 +1,91 @@
+{#-
+  The two printed pages, as markup. Rendered by BOTH templates
+  (templates/brief.html.j2 = print-first A4, templates/mobile.html.j2 = responsive).
+
+  Keeping the page markup in one partial is deliberate: the printed newspaper must be
+  the same document whichever source produced it, so only the CSS differs between the
+  two artefacts.
+
+  Three structural rules, each learned from a defect this page actually had:
+
+  1. NO CSS multi-column (`columns:`) inside a fixed-height page box. A multicol
+     container that cannot fit fragments into new columns — in paged media that means
+     additional pages — so content is either dropped silently (the page box has
+     `overflow: hidden`) or painted over itself. Neither shows up in `scrollHeight`,
+     so neither is caught by a layout measurement.
+  2. Columns on page two are explicit stack elements whose contents are assigned by
+     code (pipeline.content.plan_inside_columns), because the natural section order
+     does not pack into two fixed-height columns: it wastes a fifth of the page and
+     ends up 1017px into a 1018px column.
+  3. Only section-lead stories print a deck and a dateline, and citations are inline
+     attributions rather than their own lines. Thirteen of either does not fit two A4
+     columns; config.budgets is calibrated against the worst case that does.
+
+  Context required: e (edition content), meta (code-generated metadata),
+  assets (inlined, trusted SVG), titles (section display names), inside_plan
+  (code-computed section-to-column assignment).
+-#}
+{% import "_macros.j2" as macros %}
+{% set lead_paras = e.lead.paras | length %}
+{% set lead_split = ((lead_paras + 1) // 2) if lead_paras > 2 else lead_paras %}
+{% set plan = inside_plan if (inside_plan is defined and inside_plan) else {'left': ['technology', 'sport'], 'right': ['finance', 'culture']} %}
+<main>
+<section class="page page--front" id="page-1" aria-label="Front page">
+<header class="masthead">
+<div class="masthead-ornament" aria-hidden="true">{{ assets['masthead-ornament'] }}</div>
+<h1 class="masthead-title">The Global Brief</h1>
+<p class="masthead-meta">
+<span class="masthead-date">{{ meta.date_long }}</span><span class="masthead-sep" aria-hidden="true">|</span><span class="masthead-edition">{{ meta.edition_label }}</span><span class="masthead-sep" aria-hidden="true">|</span><span class="masthead-issue">No. {{ meta.edition_number }}</span>
+</p>
+<p class="masthead-window">{{ meta.window_line }} · {{ meta.sources_cited }} sources cited</p>
+</header>
+
+<div class="page-body page-body--front">
+<div class="front-band front-band--top">
+<article class="story story--lead" id="lead">
+{{ macros.headline_block(e.lead, 'lead-headline', titles['geopolitics']) }}
+<div class="lead-body">
+<div class="lead-col">{{ macros.para_block(e.lead, 'story-paras', 0, lead_split) }}</div>
+<div class="lead-col">{{ macros.para_block(e.lead, 'story-paras', lead_split) }}</div>
+</div>
+{{ macros.source_line(e.lead) }}
+</article>
+<aside class="front-rail">
+{{ macros.visual_block(assets['wire-globe'], meta.visual_caption) }}
+{{ macros.briefs_panel(e.briefs, 'Briefs') }}
+</aside>
+</div>
+
+<div class="front-band front-band--bottom" id="markets">
+{% for item in e.secondary %}
+{{ macros.story_block(item, titles['geopolitics'], 'secondary-headline', 'story-paras', true, 'story story--secondary') }}
+{% endfor %}
+{{ macros.markets_panel(e.markets, 'Markets') }}
+</div>
+</div>
+
+{{ macros.page_footer(meta.footer_text, 'Page 1 of 2') }}
+</section>
+
+<section class="page page--inside" id="page-2" aria-label="Page 2">
+<div class="inside-head">
+<span class="inside-head-title">{{ meta.inside_title }}</span>
+<span class="inside-head-note">{{ meta.inside_note }}</span>
+</div>
+
+<div class="page-body page-body--inside">
+<div class="inside-column inside-column--left">
+{% for section_id in plan['left'] %}
+{{ macros.inside_section(section_id, e, titles) }}
+{% endfor %}
+</div>
+<div class="inside-column inside-column--right">
+{% for section_id in plan['right'] %}
+{{ macros.inside_section(section_id, e, titles) }}
+{% endfor %}
+</div>
+</div>
+
+{{ macros.page_footer(meta.footer_text, 'Page 2 of 2') }}
+</section>
+</main>

@@ -1,0 +1,8 @@
+# Keep the repository LF-only: the workflow runs on Linux, the templates are read by
+# Chromium, and CRLF churn in generated artefacts makes diffs noisy for no benefit.
+* text=auto eol=lf
+
+*.pdf binary
+*.png binary
+*.jpg binary
+*.ico binary

@@ -1,0 +1,269 @@
+{
+  "run_date": "2026-10-13",
+  "edition": "AM",
+  "note": "AM edition · 13 stories · 22 sources cited",
+  "sources": {
+    "GEO-01": {"source": "Reuters", "url": "https://www.reuters.com/world/middle-east/truce-monitors-deploy-2026-10-13/"},
+    "GEO-02": {"source": "AP", "url": "https://apnews.com/article/corridor-truce-monitors-2026-10-13"},
+    "GEO-03": {"source": "BBC News", "url": "https://www.bbc.co.uk/news/world-europe-20261013"},
+    "GEO-04": {"source": "Al Jazeera", "url": "https://www.aljazeera.com/news/2026/10/13/corridor-truce-observers"},
+    "GEO-05": {"source": "CNN", "url": "https://edition.cnn.com/2026/10/13/world/corridor-truce-monitors/index.html"},
+    "GEO-06": {"source": "The New York Times", "url": "https://www.nytimes.com/2026/10/13/world/europe/sanctions-package-shipping.html"},
+    "GEO-07": {"source": "Financial Times", "url": "https://www.ft.com/content/shipping-insurers-sanctions-2026"},
+    "GEO-08": {"source": "The Washington Post", "url": "https://www.washingtonpost.com/world/2026/10/13/naval-talks-pacific/"},
+    "TEC-01": {"source": "Reuters", "url": "https://www.reuters.com/technology/chip-export-rules-2026-10-13/"},
+    "TEC-02": {"source": "Ars Technica", "url": "https://arstechnica.com/tech-policy/2026/10/export-controls-compute-thresholds/"},
+    "TEC-03": {"source": "Nature", "url": "https://www.nature.com/articles/d41586-026-01234-5"},
+    "TEC-04": {"source": "BBC News", "url": "https://www.bbc.co.uk/news/technology-20261013"},
+    "TEC-05": {"source": "CNBC", "url": "https://www.cnbc.com/2026/10/13/fab-investment-arizona.html"},
+    "TEC-06": {"source": "The New York Times", "url": "https://www.nytimes.com/2026/10/13/technology/undersea-cable-repair.html"},
+    "FIN-01": {"source": "Reuters", "url": "https://www.reuters.com/markets/rates-bonds/central-bank-holds-rates-2026-10-13/"},
+    "FIN-02": {"source": "CNBC", "url": "https://www.cnbc.com/2026/10/13/central-bank-rate-decision-reaction.html"},
+    "FIN-03": {"source": "Financial Times", "url": "https://www.ft.com/content/inflation-print-october-2026"},
+    "FIN-04": {"source": "Bloomberg", "url": "https://www.bloomberg.com/news/articles/2026-10-13/bank-earnings-beat-estimates"},
+    "FIN-05": {"source": "IMF", "url": "https://www.imf.org/en/Blogs/Articles/2026/10/13/fiscal-monitor-preview"},
+    "FIN-06": {"source": "The Economist", "url": "https://www.economist.com/finance-and-economics/2026/10/13/the-cost-of-carry"},
+    "SPO-01": {"source": "Formula 1", "url": "https://www.formula1.com/en/latest/article/sprint-verdict-austin-2026.5aBcDe.html"},
+    "SPO-02": {"source": "ESPN", "url": "https://www.espn.com/f1/story/_/id/2026/austin-sprint-report"},
+    "SPO-03": {"source": "ATP Tour", "url": "https://www.atptour.com/en/news/shanghai-final-2026-report"},
+    "SPO-04": {"source": "BBC Sport", "url": "https://www.bbc.co.uk/sport/football/20261013"},
+    "SPO-05": {"source": "Reuters", "url": "https://www.reuters.com/sports/soccer/qualifier-report-2026-10-13/"},
+    "SPO-06": {"source": "ESPN", "url": "https://www.espn.com/tennis/story/_/id/2026/shanghai-final-analysis"},
+    "ENT-01": {"source": "Deadline", "url": "https://deadline.com/2026/10/awards-season-preview-contenders-1234567/"},
+    "ENT-02": {"source": "BBC News", "url": "https://www.bbc.co.uk/news/entertainment-arts-20261013"},
+    "ENT-03": {"source": "Nobel Prize", "url": "https://www.nobelprize.org/prizes/literature/2026/summary/"},
+    "ENT-04": {"source": "The New York Times", "url": "https://www.nytimes.com/2026/10/13/arts/design/museum-restitution-panel.html"},
+    "ENT-05": {"source": "Al Jazeera", "url": "https://www.aljazeera.com/culture/2026/10/13/film-festival-lineup"},
+    "ENT-06": {"source": "The Economist", "url": "https://www.economist.com/culture/2026/10/13/the-economics-of-streaming"}
+  },
+  "content": {
+    "lead": {
+      "kicker": "GEOPOLITICS",
+      "headline": "Truce holds in Kestrel corridor",
+      "deck": "Observers report a quiet first night; both sides call the pause technical",
+      "dateline": "KESTREL CROSSING, Oct 13",
+      "paras": [
+        "A truce along the disputed Kestrel corridor held through its first night, the joint monitoring mission said on Tuesday, after negotiators agreed to a 72-hour pause and the deployment of unarmed observers.",
+        "The mission recorded no exchange of fire since the deadline passed at midnight, but cautioned that the arrangement remains unverified in the corridor's eastern reaches, where neither side has allowed inspectors without escort.",
+        "Under the terms, both forces pull heavy weapons back fifteen kilometres and permit inspection of two storage depots. A senior official at the mediating ministry called the deal technical and reversible rather than political.",
+        "Ministers from three neighbouring states meet in Geneva on Thursday to discuss satellite verification and a standing hotline. Diplomats said the talks would test whether the pause can extend beyond the weekend."
+      ],
+      "source_ids": ["GEO-01", "GEO-02", "GEO-03", "GEO-04"],
+      "sources": [
+        {"id": "GEO-01", "name": "Reuters", "url": "https://www.reuters.com/world/middle-east/truce-monitors-deploy-2026-10-13/"},
+        {"id": "GEO-02", "name": "AP", "url": "https://apnews.com/article/corridor-truce-monitors-2026-10-13"},
+        {"id": "GEO-03", "name": "BBC News", "url": "https://www.bbc.co.uk/news/world-europe-20261013"},
+        {"id": "GEO-04", "name": "Al Jazeera", "url": "https://www.aljazeera.com/news/2026/10/13/corridor-truce-observers"}
+      ]
+    },
+    "secondary": [
+      {
+        "kicker": "SANCTIONS",
+        "headline": "Brussels curbs shipping insurers",
+        "deck": "Cover for the listed fleet must wind down within ninety days",
+        "dateline": "BRUSSELS, Oct 13",
+        "paras": [
+          "European governments approved a fifteenth sanctions package on Monday targeting marine insurers and reinsurers who underwrite the listed fleet, with ninety days to wind down cover.",
+          "The measure stops short of a port ban sought by four member states and exempts food and medical cargo, while officials promised guidance for brokers."
+        ],
+        "source_ids": ["GEO-06", "GEO-07"],
+        "sources": [
+          {"id": "GEO-06", "name": "The New York Times", "url": "https://www.nytimes.com/2026/10/13/world/europe/sanctions-package-shipping.html"},
+          {"id": "GEO-07", "name": "Financial Times", "url": "https://www.ft.com/content/shipping-insurers-sanctions-2026"}
+        ]
+      },
+      {
+        "kicker": "PACIFIC",
+        "headline": "Navies seek shared exercise calendar",
+        "deck": "Planners want fewer overlapping drills after two near-misses",
+        "dateline": "SINGAPORE, Oct 13",
+        "paras": [
+          "Naval planners from six Pacific states began talks in Singapore on Monday on a shared exercise calendar and a notification channel, after two incidents this year.",
+          "Officials said the discussions covered scheduling and communication rather than alliance, and that no participant had agreed to limit the size of drills."
+        ],
+        "source_ids": ["GEO-08", "GEO-05"],
+        "sources": [
+          {"id": "GEO-08", "name": "The Washington Post", "url": "https://www.washingtonpost.com/world/2026/10/13/naval-talks-pacific/"},
+          {"id": "GEO-05", "name": "CNN", "url": "https://edition.cnn.com/2026/10/13/world/corridor-truce-monitors/index.html"}
+        ]
+      }
+    ],
+    "briefs": [
+      {"label": "Diplomacy", "text": "The mediating ministry said a follow-up round on the corridor would convene in Geneva on Thursday, with technical teams arriving a day earlier."},
+      {"label": "Trade", "text": "A tariff review covering steel and aluminium was extended by sixty days, delaying a decision importers say adds four percent to construction costs."},
+      {"label": "Energy", "text": "Pipeline flows through the northern trunk line returned to normal after four days of maintenance, restoring a fifth of daily regional gas intake."},
+      {"label": "Health", "text": "Health agencies allocated 40 million seasonal vaccine doses to low-income countries, prioritising regions where coverage fell below a third last winter."}
+    ],
+    "markets": {
+      "items": [
+        {"label": "Brent crude", "dir": "down", "note": "Fell as the truce held and the pipeline restarted"},
+        {"label": "Gold", "dir": "up", "note": "Third session of gains on softer real yields"},
+        {"label": "Euro / dollar", "dir": "flat", "note": "Little changed before Thursday's policy meeting"},
+        {"label": "10-year Treasury", "dir": "up", "note": "Yields rose after the central bank held rates"},
+        {"label": "Shanghai composite", "dir": "down", "note": "Chip shares led a broad retreat"}
+      ],
+      "note": "Trading was thin before Thursday's policy decisions, with attention on whether the corridor pause survives the week."
+    },
+    "tech": {
+      "stories": [
+        {
+          "kicker": "EXPORT CONTROLS",
+          "headline": "Compute thresholds tightened for accelerators",
+          "deck": "Draft rules would cover clustered systems, not just single chips",
+          "dateline": "WASHINGTON, Oct 13",
+          "paras": [
+            "Draft export rules published on Monday would widen controls on advanced accelerators to cover clustered systems, closing a route buyers used to assemble equivalent capacity.",
+            "The measure sets a performance density test per rack and requires licences for transfers to listed end users, with a ninety-day transition for booked orders."
+          ],
+          "source_ids": ["TEC-01", "TEC-02", "TEC-04"],
+          "sources": [
+            {"id": "TEC-01", "name": "Reuters", "url": "https://www.reuters.com/technology/chip-export-rules-2026-10-13/"},
+            {"id": "TEC-02", "name": "Ars Technica", "url": "https://arstechnica.com/tech-policy/2026/10/export-controls-compute-thresholds/"},
+            {"id": "TEC-04", "name": "BBC News", "url": "https://www.bbc.co.uk/news/technology-20261013"}
+          ]
+        },
+        {
+          "kicker": "QUANTUM",
+          "headline": "Logical qubit outlives its parts",
+          "paras": [
+            "A research group reported that a logical qubit built from 21 physical components stayed coherent longer than any single component, the point at which correction pays.",
+            "The team cautioned that thousands of physical qubits would be needed before such machines can run useful calculations."
+          ],
+          "source_ids": ["TEC-03"],
+          "sources": [
+            {"id": "TEC-03", "name": "Nature", "url": "https://www.nature.com/articles/d41586-026-01234-5"}
+          ]
+        },
+        {
+          "kicker": "INFRASTRUCTURE",
+          "headline": "Two cable repair ships for winter",
+          "paras": [
+            "Cable operators said two repair ships will cover the Pacific through the winter, down from four last year, leaving little slack if storms hit two routes.",
+            "Traffic has been rerouted onto southern paths since a break in June, adding latency to financial and cloud traffic."
+          ],
+          "source_ids": ["TEC-06", "TEC-05"],
+          "sources": [
+            {"id": "TEC-06", "name": "The New York Times", "url": "https://www.nytimes.com/2026/10/13/technology/undersea-cable-repair.html"},
+            {"id": "TEC-05", "name": "CNBC", "url": "https://www.cnbc.com/2026/10/13/fab-investment-arizona.html"}
+          ]
+        }
+      ]
+    },
+    "money": {
+      "lead": {
+        "kicker": "MONETARY POLICY",
+        "headline": "Central bank holds and drops hawkish bias",
+        "deck": "Policymakers cite a cooling labour market and softer core prices",
+        "dateline": "FRANKFURT, Oct 13",
+        "paras": [
+          "The central bank left its policy rate at 3.25 percent on Tuesday and removed a reference to further tightening, which traders read as the cycle's end.",
+          "Officials said core inflation had slowed for two consecutive months, but warned that services prices remained sticky and that cuts were not yet under discussion."
+        ],
+        "source_ids": ["FIN-01", "FIN-02", "FIN-03"],
+        "sources": [
+          {"id": "FIN-01", "name": "Reuters", "url": "https://www.reuters.com/markets/rates-bonds/central-bank-holds-rates-2026-10-13/"},
+          {"id": "FIN-02", "name": "CNBC", "url": "https://www.cnbc.com/2026/10/13/central-bank-rate-decision-reaction.html"},
+          {"id": "FIN-03", "name": "Financial Times", "url": "https://www.ft.com/content/inflation-print-october-2026"}
+        ]
+      },
+      "side": [
+        {
+          "kicker": "BANKING",
+          "headline": "Lenders beat forecasts on trading",
+          "dateline": "NEW YORK, Oct 13",
+          "paras": [
+            "Two large lenders reported quarterly profits above forecasts on Monday, helped by a rebound in trading revenue that offset higher provisions against consumer loans.",
+            "Executives said credit quality was stabilising at the low end of the card book."
+          ],
+          "source_ids": ["FIN-04"],
+          "sources": [
+            {"id": "FIN-04", "name": "Bloomberg", "url": "https://www.bloomberg.com/news/articles/2026-10-13/bank-earnings-beat-estimates"}
+          ]
+        },
+        {
+          "kicker": "FISCAL",
+          "headline": "Debt service now outpaces defence",
+          "dateline": "WASHINGTON, Oct 13",
+          "paras": [
+            "Interest payments will exceed defence budgets in a third of advanced economies next year, the fund said, urging governments to publish consolidation plans.",
+            "It projected global public debt would reach 97 percent of output by 2030 without policy changes."
+          ],
+          "source_ids": ["FIN-05", "FIN-06"],
+          "sources": [
+            {"id": "FIN-05", "name": "IMF", "url": "https://www.imf.org/en/Blogs/Articles/2026/10/13/fiscal-monitor-preview"},
+            {"id": "FIN-06", "name": "The Economist", "url": "https://www.economist.com/finance-and-economics/2026/10/13/the-cost-of-carry"}
+          ]
+        }
+      ],
+      "key_numbers": [
+        {"value": "3.25%", "label": "Policy rate, held"},
+        {"value": "2.6%", "label": "Core inflation"},
+        {"value": "4.12%", "label": "Ten-year yield"},
+        {"value": "78.40", "label": "Brent, dollars a barrel"}
+      ]
+    },
+    "sport": {
+      "lead": {
+        "kicker": "FORMULA ONE",
+        "headline": "Sprint win levels the title fight",
+        "deck": "A first-lap pass settled a race decided by tyre management",
+        "dateline": "AUSTIN, Oct 13",
+        "paras": [
+          "The championship lead changed hands for the fourth time this season after a sprint victory cut the gap to two points with five rounds left.",
+          "The winner passed two cars on the opening lap and managed fading medium tyres to the flag, while his rival recovered to finish third."
+        ],
+        "source_ids": ["SPO-01", "SPO-02"],
+        "sources": [
+          {"id": "SPO-01", "name": "Formula 1", "url": "https://www.formula1.com/en/latest/article/sprint-verdict-austin-2026.5aBcDe.html"},
+          {"id": "SPO-02", "name": "ESPN", "url": "https://www.espn.com/f1/story/_/id/2026/austin-sprint-report"}
+        ]
+      },
+      "bullets": [
+        "Tennis: the Shanghai final went to a third-set tie-break, the champion saving two match points.",
+        "Football: a stoppage-time header kept the qualifier alive, decided by goal difference.",
+        "Athletics: the spring marathon moves to a 6am start after two warm race days."
+      ]
+    },
+    "culture": [
+      {
+        "kicker": "LITERATURE",
+        "headline": "Nobel prize goes to a poet",
+        "paras": [
+          "The literature prize was awarded to a poet whose work traces displacement and return across three languages, the committee said, praising writing that refuses sentiment.",
+          "Publishers reported immediate demand, with two translations scheduled for reissue by spring."
+        ],
+        "source_ids": ["ENT-03", "ENT-02"],
+        "sources": [
+          {"id": "ENT-03", "name": "Nobel Prize", "url": "https://www.nobelprize.org/prizes/literature/2026/summary/"},
+          {"id": "ENT-02", "name": "BBC News", "url": "https://www.bbc.co.uk/news/entertainment-arts-20261013"}
+        ]
+      },
+      {
+        "kicker": "AWARDS",
+        "headline": "Festival winners reshape the season",
+        "paras": [
+          "Two festival grand-prize winners entered the awards conversation this week, giving distributors a pair of small-budget contenders against a slate of studio sequels.",
+          "Exhibitors said advance bookings favour the sequels, though critics' groups have begun to gather around the festival titles."
+        ],
+        "source_ids": ["ENT-01", "ENT-05"],
+        "sources": [
+          {"id": "ENT-01", "name": "Deadline", "url": "https://deadline.com/2026/10/awards-season-preview-contenders-1234567/"},
+          {"id": "ENT-05", "name": "Al Jazeera", "url": "https://www.aljazeera.com/culture/2026/10/13/film-festival-lineup"}
+        ]
+      },
+      {
+        "kicker": "MUSEUMS",
+        "headline": "Restitution panel sets timetable",
+        "paras": [
+          "A restitution panel proposed a three-year timetable for claims on contested antiquities and recommended that museums publish provenance records for acquisitions made before 1970.",
+          "Two institutions said they would begin returning objects with documented export gaps; streaming services are separately reworking release schedules."
+        ],
+        "source_ids": ["ENT-04", "ENT-06"],
+        "sources": [
+          {"id": "ENT-04", "name": "The New York Times", "url": "https://www.nytimes.com/2026/10/13/arts/design/museum-restitution-panel.html"},
+          {"id": "ENT-06", "name": "The Economist", "url": "https://www.economist.com/culture/2026/10/13/the-economics-of-streaming"}
+        ]
+      }
+    ]
+  }
+}

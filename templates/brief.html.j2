@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>{{ meta.title }}</title>
+<style>
+{% include "_tokens.j2" %}
+
+/* ==========================================================================
+   Print-first artefact: the A4 geometry below is ALWAYS active, on screen too,
+   so a browser preview is the PDF. The two .page boxes are fixed at 210x297mm
+   with overflow hidden — exactly two pages, with export.assert_pdf() as the
+   compensating control for silent clipping (invariant 5).
+   ========================================================================== */
+{% set print_geometry_always = true %}{% include "_print.j2" %}
+
+@media screen {
+  body {
+    background: var(--nm-color-bg-subtle);
+    padding: var(--nm-space-5) var(--nm-space-3) var(--nm-space-8);
+  }
+
+  .page {
+    border: var(--rule-thin) solid var(--rule);
+    box-shadow: var(--nm-shadow-md);
+  }
+
+  .page + .page { margin-top: var(--nm-space-5); }
+
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 20;
+    background: var(--paper);
+    color: var(--ink);
+    padding: var(--nm-space-2) var(--nm-space-3);
+    border: var(--rule-thin) solid var(--accent);
+    border-radius: var(--nm-radius-sm);
+    font-family: var(--nm-font-sans);
+    font-size: var(--nm-text-sm);
+  }
+
+  .skip-link:focus { left: var(--nm-space-4); top: var(--nm-space-4); }
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#page-1">Skip to the front page</a>
+{% include "_pages.j2" %}
+</body>
+</html>

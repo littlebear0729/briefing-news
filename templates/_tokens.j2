@@ -1,0 +1,123 @@
+{#-
+  Design tokens. TWO :root blocks, in this order, always at the top of the first
+  <style> element (DESIGN.md invariant 7):
+
+    1. Neutral Modern design system — treat as a verbatim, vendored block. Do not
+       edit values here; extend below instead.
+    2. The Global Brief project extension — project-owned, edit freely.
+
+  Consequence of the split: outside :root there must be no colour *literal*
+  (hex/rgb/hsl). Everything else — layout, rules, print geometry — reads tokens.
+-#}
+:root {
+  /* --- Neutral Modern: colour --- */
+  --nm-color-bg: #ffffff;
+  --nm-color-bg-subtle: #fafafa;
+  --nm-color-surface: #f4f4f5;
+  --nm-color-border: #e4e4e7;
+  --nm-color-border-strong: #d4d4d8;
+  --nm-color-text: #18181b;
+  --nm-color-text-muted: #52525b;
+  --nm-color-text-subtle: #71717a;
+  --nm-color-accent: #1d4ed8;
+  --nm-color-accent-subtle: #eef2ff;
+  --nm-color-on-accent: #ffffff;
+  --nm-color-positive: #15803d;
+  --nm-color-negative: #b91c1c;
+  --nm-color-neutral: #57534e;
+
+  /* --- Neutral Modern: type --- */
+  --nm-font-sans: "Segoe UI", "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --nm-font-serif: Georgia, "Iowan Old Style", "Times New Roman", "Noto Serif", serif;
+  --nm-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --nm-text-2xs: 0.625rem;
+  --nm-text-xs: 0.75rem;
+  --nm-text-sm: 0.875rem;
+  --nm-text-base: 1rem;
+  --nm-text-lg: 1.125rem;
+  --nm-text-xl: 1.25rem;
+  --nm-text-2xl: 1.5rem;
+  --nm-text-3xl: 1.875rem;
+  --nm-leading-tight: 1.15;
+  --nm-leading-snug: 1.35;
+  --nm-leading-normal: 1.55;
+  --nm-tracking-wide: 0.08em;
+  --nm-weight-regular: 400;
+  --nm-weight-medium: 500;
+  --nm-weight-semibold: 600;
+  --nm-weight-bold: 700;
+
+  /* --- Neutral Modern: space --- */
+  --nm-space-1: 0.25rem;
+  --nm-space-2: 0.5rem;
+  --nm-space-3: 0.75rem;
+  --nm-space-4: 1rem;
+  --nm-space-5: 1.5rem;
+  --nm-space-6: 2rem;
+  --nm-space-8: 3rem;
+  --nm-space-10: 4rem;
+  --nm-space-12: 6rem;
+
+  /* --- Neutral Modern: shape, elevation, focus --- */
+  --nm-radius-sm: 2px;
+  --nm-radius-md: 4px;
+  --nm-radius-lg: 8px;
+  --nm-shadow-sm: 0 1px 2px rgba(24, 24, 27, 0.06);
+  --nm-shadow-md: 0 2px 8px rgba(24, 24, 27, 0.08);
+  --nm-focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px #1d4ed8;
+
+  /* --- Neutral Modern: breakpoints (fixed contract: 640 / 1024) --- */
+  --nm-breakpoint-sm: 640px;
+  --nm-breakpoint-lg: 1024px;
+}
+
+:root {
+  /* --- The Global Brief: project extension tokens --- */
+  --paper: var(--nm-color-bg);
+  --paper-subtle: var(--nm-color-bg-subtle);
+  --ink: var(--nm-color-text);
+  --ink-muted: var(--nm-color-text-muted);
+  --ink-subtle: var(--nm-color-text-subtle);
+  --rule: var(--nm-color-border);
+  --rule-strong: var(--nm-color-border-strong);
+  --rule-hair: 0.5pt;
+  --rule-thin: 1px;
+  --rule-heavy: 2.5pt;
+  --accent: var(--nm-color-accent);
+  --accent-wash: var(--nm-color-accent-subtle);
+  --on-accent: var(--nm-color-on-accent);
+  --dir-up: var(--nm-color-positive);
+  --dir-down: var(--nm-color-negative);
+  --dir-flat: var(--nm-color-neutral);
+  --focus-ring: var(--nm-focus-ring);
+  --brief-wash: var(--nm-color-surface);
+
+  /* print geometry: A4, fixed, exactly two pages */
+  --page-width: 210mm;
+  --page-height: 297mm;
+  --page-pad-block: 8mm;
+  --page-pad-inline: 10.5mm;
+  --page-footer-space: 4.5mm;
+  --front-gap: 3mm;
+  --column-gap: 4.6mm;
+
+  /* print type scale — calibrated against measured page overflow, not guessed:
+     the worst-case edition allowed by config.budgets still fits both boxes with
+     the footer on the page it belongs to (see tests/test_layout.py). */
+  --masthead-size: 32pt;
+  --lead-headline-size: 19pt;
+  --secondary-headline-size: 11.8pt;
+  --section-headline-size: 10.8pt;
+  --culture-headline-size: 9.6pt;
+  --print-body-size: 7.8pt;
+  --print-body-leading: 1.21;
+  --print-meta-size: 6.2pt;
+  --print-source-size: 5.6pt;
+  --kicker-size: 6.2pt;
+  --deck-size: 8.2pt;
+  --brief-size: 7.7pt;
+
+  /* screen rhythm */
+  --screen-max: 46rem;
+  --screen-max-wide: 74rem;
+}
