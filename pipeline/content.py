@@ -176,8 +176,11 @@ def closing_snippets(content: Mapping[str, Any], *, words: int = 4) -> list[str]
     if sport.get("bullets"):
         snippets.append(tail(sport["bullets"][-1]))
     numbers = money.get("key_numbers") or []
-    if numbers:
-        snippets.append(tail((numbers[-1] or {}).get("label")))
+    shown = numbers[:4]  # the page renders at most four pairs — keep in sync with
+    # key_numbers_panel(e.money['key_numbers'][:4]) in newspaper.html.j2; checking the
+    # tail of an unrendered pair is how a deliverable edition fails preflight.
+    if shown:
+        snippets.append(tail((shown[-1] or {}).get("label")))
 
     seen: set[str] = set()
     unique: list[str] = []

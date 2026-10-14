@@ -173,7 +173,7 @@ EDITION_SCHEMA: dict[str, Any] = {
                 "key_numbers": {
                     "type": "array",
                     "minItems": 3,
-                    "maxItems": 5,
+                    "maxItems": 4,
                     "items": {
                         "type": "object",
                         "required": ["value", "label"],
@@ -259,7 +259,7 @@ BUDGETS (hard limits; code trims anything longer, and a trimmed story reads wors
   dateline at most 5 words (e.g. "BRUSSELS, Oct 13").
 - briefs: 3-4 items, text at most 24 words each.
 - sport bullets: 3-4 bullets, at most 16 words each.
-- markets: 4-6 items, one sentence of context; money.key_numbers: 3-5 pairs.
+- markets: 4-6 items, one sentence of context; money.key_numbers: 3-4 pairs.
 
 OUTPUT: exactly one JSON object, no prose before or after, no code fences, with exactly
 these keys and nesting:

@@ -127,7 +127,7 @@ RSS 摘要属于**不可信输入**；「只能引用给定 id」这条契约同
 ```
 lead{…STORY}                     secondary[2×STORY]        briefs[3..5]{label,text}
 markets{items[4..6]{label,dir∈up|down|flat,note}, note}
-tech{stories[2..3]}              money{lead, side[1..2], key_numbers[3..5]{value,label}}
+tech{stories[2..3]}              money{lead, side[1..2], key_numbers[3..4]{value,label}}
 sport{lead, bullets[3..4]}       culture[3×STORY]
 STORY = {kicker?, headline, deck?, dateline?, paras[1..6], source_ids[1..5]}
 ```

@@ -62,7 +62,9 @@ def worst_case(fixture_payload: dict, config: dict) -> dict:
     story(money["lead"], budgets["story_paras"], budgets["story_words"])
     for node in money["side"]:
         story(node, budgets["story_paras"], budgets["story_words"])
-    money["key_numbers"] = [{"value": "123.45", "label": " ".join(FILLER[:8])} for _ in range(5)]
+    # schema maxItems: the page renders at most four pairs (newspaper.html.j2 [:4]),
+    # so a fifth pair is not part of the worst legal edition.
+    money["key_numbers"] = [{"value": "123.45", "label": " ".join(FILLER[:8])} for _ in range(4)]
     sport = content["sport"]
     story(sport["lead"], budgets["story_paras"], budgets["story_words"])
     sport["bullets"] = [sentence(budgets["bullet_words"], index * 7) for index in range(4)]

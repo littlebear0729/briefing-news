@@ -167,6 +167,23 @@ def test_preflight_catches_a_dropped_slot(config: dict, document: dict) -> None:
     assert "did not reach the page" in str(excinfo.value)
 
 
+def test_preflight_ignores_a_key_number_the_page_cannot_show(config: dict, document: dict) -> None:
+    """The Key numbers panel renders at most four pairs (newspaper.html.j2 [:4]).
+
+    A payload may legally carry a fifth (old schema allowed 3-5); preflight samples the
+    closing words of what the page actually shows, so an unrendered fifth label must not
+    fail delivery. Regression for the 2026-10-14 AM run: 'workers leaving Royal Mail'.
+    """
+    payload = copy.deepcopy(document["payload"])
+    numbers = payload["content"]["money"]["key_numbers"]
+    assert len(numbers) <= 4
+    numbers.append({"value": "99.99", "label": "workers leaving Royal Mail today"})
+    html = render.render_html(payload, config, run_date="2026-10-13", edition_name="AM")
+    preflight.assert_deliverable(html, payload=payload, config=config)
+    snippets = ch.closing_snippets(payload["content"])
+    assert "workers leaving Royal Mail today" not in snippets[-1]
+
+
 def test_preflight_catches_a_missing_footer(config: dict, document: dict) -> None:
     broken = document["html"].replace(
         config["layout"]["footer_text"], "SOMETHING ELSE ENTIRELY", 1
