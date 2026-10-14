@@ -1,9 +1,11 @@
 # The Global Brief — twice-daily build and delivery.
 #
 # Two cron entries, one per edition, because GitHub cron cannot express "twice a day"
-# in a single schedule. They fire at the edition cutoffs defined in pipeline/config.yaml
-# (AM 01:15 UTC, PM 13:15 UTC). GitHub's scheduler is best effort: it can run late, and
-# under load it can skip a run entirely — use the manual dispatch below to backfill.
+# in a single schedule. Each fires ahead of the edition cutoff defined in
+# pipeline/config.yaml (AM 00:17 UTC before the 01:15 cutoff, PM 13:17 UTC before the
+# 13:15 cutoff), leaving headroom for GitHub's scheduler. GitHub's scheduler is best
+# effort: it can run late, and under load it can skip a run entirely — use the manual
+# dispatch below to backfill.
 #
 # Jobs are split so that no single job holds both secrets (DESIGN.md §6D):
 #   build   : the LLM key, and nothing else that can act on the outside world
@@ -20,8 +22,8 @@ name: Daily Brief
 
 on:
   schedule:
-    - cron: "15 0 * * *"   # AM edition (cutoff 01:15 UTC)
-    - cron: "15 13 * * *"  # PM edition (cutoff 13:15 UTC)
+    - cron: "17 0 * * *"   # AM edition (ahead of the 01:15 UTC cutoff)
+    - cron: "17 13 * * *"  # PM edition (ahead of the 13:15 UTC cutoff)
   workflow_dispatch:
     inputs:
       edition:
@@ -69,7 +71,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # Cron decides the edition: the 13:15 run is PM, everything else is AM. A manual
+      # Cron decides the edition: the 13:17 run is PM, everything else is AM. A manual
       # dispatch may override both edition and date, which is the backfill path.
       - name: Resolve edition and date
         id: resolve
@@ -82,7 +84,7 @@ jobs:
           set -euo pipefail
           if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ -n "${INPUT_EDITION:-}" ] && [ "${INPUT_EDITION}" != "auto" ]; then
             edition="$INPUT_EDITION"
-          elif [ "${SCHEDULE:-}" = "15 13 * * *" ]; then
+          elif [ "${SCHEDULE:-}" = "17 13 * * *" ]; then
             edition="pm"
           else
             edition="am"
@@ -172,6 +174,9 @@ jobs:
       # paper twice", so it is committed back rather than kept inside the runner.
       - name: Record what was delivered
         if: always()
+        env:
+          RUN_DATE: ${{ needs.build.outputs.date }}
+          EDITION: ${{ needs.build.outputs.edition }}
         run: |
           set -euo pipefail
           if [ ! -f state/sent.json ]; then

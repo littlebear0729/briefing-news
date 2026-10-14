@@ -134,7 +134,8 @@ makes idempotency survive across runs.
 
 ## Automation
 
-`.github/workflows/daily-brief.yml` runs at 01:15 and 13:15 UTC (the edition cutoffs),
+`.github/workflows/daily-brief.yml` runs at 00:17 and 13:17 UTC, ahead of the 01:15/13:15
+edition cutoffs,
 plus manual dispatch for backfills. Jobs are split so no job holds both secrets: `build`
 (the LLM key) → `publish` (the bot token, after the document checks) → `report` (failure
 alert). All actions are pinned to commit SHAs; there is no browser to install.

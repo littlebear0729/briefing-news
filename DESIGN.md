@@ -96,7 +96,7 @@ RSS 摘要属于**不可信输入**；「只能引用给定 id」这条契约同
 | `pipeline/run.py` | `main()`：`--edition am\|pm [--date YYYY-MM-DD] [--no-pdf]` | `dist/manifest-*.json` |
 | `templates/brief.html.j2` | A4 打印优先（固定 210mm） | — |
 | `templates/mobile.html.j2` | **响应式**（手机单栏 / ≥1024px 多栏）+ 打印恰好两页 A4 | — |
-| `.github/workflows/daily-brief.yml` | cron `15 1 * * *`(AM) / `15 13 * * *`(PM) + `workflow_dispatch` | artifacts + 回写 `dist/` |
+| `.github/workflows/daily-brief.yml` | cron `17 0 * * *`(AM) / `17 13 * * *`(PM) + `workflow_dispatch` | artifacts + 回写 `dist/` |
 
 **现成 fixture（无网络、无 key 也能跑）**：
 `build/edition-2026-10-13-am.json`（手工编写的完整一期，含 32 条来源索引）+ 已生成的 `mobile.html`。
