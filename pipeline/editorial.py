@@ -567,59 +567,73 @@ def _extract_json(text: str) -> str:
 
 
 def _post_chat(settings: Mapping[str, Any], messages: list[dict[str, str]]) -> tuple[str, dict[str, Any] | None]:
-    """One HTTP round trip to a chat-completions endpoint. Raises :class:`EditorialError`."""
+    """One chat-completions round trip through the OpenAI SDK. Raises :class:`EditorialError`."""
     try:
-        import requests  # noqa: PLC0415
+        import openai  # noqa: PLC0415
+        from openai import OpenAI  # noqa: PLC0415
     except ModuleNotFoundError as exc:  # pragma: no cover
-        raise EditorialError("requests is not installed; run: pip install -r requirements.txt") from exc
+        raise EditorialError("openai is not installed; run: pip install -r requirements.txt") from exc
 
     base_url = str(settings.get("base_url") or "").rstrip("/")
     if not base_url:
         raise EditorialError(
             "no LLM endpoint configured: set BRIEF_LLM_BASE_URL or config.model.base_url"
         )
-    url = base_url + "/chat/completions"
-    payload: dict[str, Any] = {
+    api_key = str(settings["api_key"])
+    # Retry policy stays owned by _request_json (config.model.retries); the SDK's
+    # own retries must be off or every attempt would silently multiply.
+    client = OpenAI(
+        api_key=api_key,
+        base_url=base_url,
+        timeout=float(settings.get("timeout_seconds", 120)),
+        max_retries=0,
+    )
+    kwargs: dict[str, Any] = {
         "model": settings["model"],
         "messages": messages,
         "temperature": settings["temperature"],
         "stream": False,
     }
     if settings.get("json_mode"):
-        payload["response_format"] = {"type": "json_object"}
-    headers = {
-        "Authorization": f"Bearer {settings['api_key']}",
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-    }
+        kwargs["response_format"] = {"type": "json_object"}
 
     try:
-        response = requests.post(
-            url, json=payload, headers=headers, timeout=float(settings.get("timeout_seconds", 120))
-        )
-    except Exception as exc:  # requests.RequestException
+        completion = client.chat.completions.create(**kwargs)
+    except openai.APIStatusError as exc:
+        body = getattr(exc, "body", None)
+        if isinstance(body, str):
+            text = body
+        elif body is not None:
+            try:
+                text = json.dumps(body)
+            except (TypeError, ValueError):
+                text = str(body)
+        else:
+            text = str(exc)
+        snippet = _redact(text[:400], api_key)
+        raise EditorialError(f"LLM endpoint returned HTTP {exc.status_code}: {snippet}") from exc
+    except (openai.APIConnectionError, openai.OpenAIError) as exc:
         raise EditorialError(
-            _redact(f"LLM request failed: {type(exc).__name__}: {exc}", str(settings.get("api_key")))
+            _redact(f"LLM request failed: {type(exc).__name__}: {exc}", api_key)
         ) from exc
 
-    if response.status_code >= 400:
-        snippet = _redact((response.text or "")[:400], str(settings.get("api_key")))
-        raise EditorialError(f"LLM endpoint returned HTTP {response.status_code}: {snippet}")
-
-    try:
-        data = response.json()
-    except ValueError as exc:
-        snippet = _redact((response.text or "")[:200], str(settings.get("api_key")))
-        raise EditorialError(f"LLM endpoint returned non-JSON: {snippet}") from exc
-
-    choices = data.get("choices") or []
+    choices = list(completion.choices or [])
     if not choices:
-        raise EditorialError(f"LLM response had no choices: {_redact(json.dumps(data)[:300], str(settings.get('api_key')))}")
-    message = choices[0].get("message") or {}
-    content = message.get("content")
+        raise EditorialError(
+            f"LLM response had no choices: {_redact(str(completion)[:300], api_key)}"
+        )
+    message = choices[0].message
+    content = getattr(message, "content", None)
     if not isinstance(content, str) or not content.strip():
         raise EditorialError("LLM response contained an empty message")
-    return content, data.get("usage")
+
+    usage: dict[str, Any] | None = None
+    if completion.usage is not None:
+        try:
+            usage = dict(completion.usage.model_dump())
+        except Exception:  # pragma: no cover - defensive for odd SDK shapes
+            usage = None
+    return content, usage
 
 
 def _request_json(
