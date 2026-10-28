@@ -1,5 +1,411 @@
 {
-  "version": 1,
-  "entries": {},
-  "updated_at": null
+  "entries": {
+    "2026-10-14-AM": {
+      "chats": {
+        "400521524": {
+          "bytes": 37541,
+          "file_id": "BQACAgUAAxkDAAMHas7kOKp7MnPxycTjnaZsIQsJdXgAAjQgAAKorXlWJpVG2uaN1Es9BA",
+          "file_name": "The-Global-Brief-2026-10-14-AM.html",
+          "file_unique_id": "AgADNCAAAqiteVY",
+          "message_id": 7,
+          "sent_at": "2026-10-14T02:08:56+00:00",
+          "sha256": "2859809f916e711ce420ae5822564e512511adcde1fdd2d3f352def5d32457b0"
+        }
+      },
+      "date": "2026-10-14",
+      "edition": "AM"
+    },
+    "2026-10-14-PM": {
+      "chats": {
+        "400521524": {
+          "bytes": 37906,
+          "file_id": "BQACAgUAAxkDAAMIas_D00nwFfYEXrKLBlzJx0RUTh8AAj4qAAKorYFWx6QblNnr30I9BA",
+          "file_name": "The-Global-Brief-2026-10-14-PM.html",
+          "file_unique_id": "AgADPioAAqitgVY",
+          "message_id": 8,
+          "sent_at": "2026-10-14T18:02:59+00:00",
+          "sha256": "1e778c89da5b83fb1084e7d07480d994ed423fc36955f8539ba1eff4d0dd315e"
+        }
+      },
+      "date": "2026-10-14",
+      "edition": "PM"
+    },
+    "2026-10-15-AM": {
+      "chats": {
+        "400521524": {
+          "bytes": 38834,
+          "file_id": "BQACAgUAAxkDAAMJatBcEkaQi4Yd8NlhKZcebP6sk7gAAlsiAAJdkYBWTsFovqVrBjM9BA",
+          "file_name": "The-Global-Brief-2026-10-15-AM.html",
+          "file_unique_id": "AgADWyIAAl2RgFY",
+          "message_id": 9,
+          "sent_at": "2026-10-15T04:52:34+00:00",
+          "sha256": "7673e53659ed07af567f257e8272ea234e9328f4ba0ea528a4cb751d5097ea4a"
+        }
+      },
+      "date": "2026-10-15",
+      "edition": "AM"
+    },
+    "2026-10-15-PM": {
+      "chats": {
+        "400521524": {
+          "bytes": 37799,
+          "file_id": "BQACAgUAAxkDAAMKatER8blRJqxyZ3lu5WXskxek7asAAt4eAAJdkYhW_RAFSmL5SjU9BA",
+          "file_name": "The-Global-Brief-2026-10-15-PM.html",
+          "file_unique_id": "AgAD3h4AAl2RiFY",
+          "message_id": 10,
+          "sent_at": "2026-10-15T17:48:33+00:00",
+          "sha256": "28a14790a0ec05f0db7b4fd8e9638ae3d6bb2fc72948a182a628b27d5dd4faea"
+        }
+      },
+      "date": "2026-10-15",
+      "edition": "PM"
+    },
+    "2026-10-16-AM": {
+      "chats": {
+        "400521524": {
+          "bytes": 38067,
+          "file_id": "BQACAgUAAxkDAAMLatGrRlGVPUb-qWuSIt9dztSrdmkAAiYgAAJdkYhWw3sYtRwCxok9BA",
+          "file_name": "The-Global-Brief-2026-10-16-AM.html",
+          "file_unique_id": "AgADJiAAAl2RiFY",
+          "message_id": 11,
+          "sent_at": "2026-10-16T04:42:46+00:00",
+          "sha256": "02bf8521eadf433dc5b50bb0915340593d9b455d5735ff82b536dd76cae2dcd2"
+        }
+      },
+      "date": "2026-10-16",
+      "edition": "AM"
+    },
+    "2026-10-16-PM": {
+      "chats": {
+        "400521524": {
+          "bytes": 37069,
+          "file_id": "BQACAgUAAxkDAAMMatJd_DACaWCuxLbCcDp1o2HubhYAAoIjAAJnsJFWXKESWGF4rpc9BA",
+          "file_name": "The-Global-Brief-2026-10-16-PM.html",
+          "file_unique_id": "AgADgiMAAmewkVY",
+          "message_id": 12,
+          "sent_at": "2026-10-16T17:25:16+00:00",
+          "sha256": "7a8736033696c5bcc68c0b945e7316d68ba24a086d935ce3d03441d62f5e1386"
+        }
+      },
+      "date": "2026-10-16",
+      "edition": "PM"
+    },
+    "2026-10-17-AM": {
+      "chats": {
+        "400521524": {
+          "bytes": 38365,
+          "file_id": "BQACAgUAAxkDAAMNatL8CulU8ZZ2tvi-LS1cU57aqf8AAhoeAAJnsJlW3ucNowzQLLI9BA",
+          "file_name": "The-Global-Brief-2026-10-17-AM.html",
+          "file_unique_id": "AgADGh4AAmewmVY",
+          "message_id": 13,
+          "sent_at": "2026-10-17T04:39:39+00:00",
+          "sha256": "2c0d00b992f3adee1ac333e6f2683f75ca1fbe4cfcd70418b32213b935813832"
+        }
+      },
+      "date": "2026-10-17",
+      "edition": "AM"
+    },
+    "2026-10-17-PM": {
+      "chats": {
+        "400521524": {
+          "bytes": 37253,
+          "file_id": "BQACAgUAAxkDAAMOatOhoz2JZd1FAvA1hGhRGG3DT5UAAhwgAAJnsJlW470mJBOp9xA9BA",
+          "file_name": "The-Global-Brief-2026-10-17-PM.html",
+          "file_unique_id": "AgADHCAAAmewmVY",
+          "message_id": 14,
+          "sent_at": "2026-10-17T16:26:11+00:00",
+          "sha256": "ac0a4ccf49e3abf049928732cd070c01f5cb6f3be5f9a0d412ee49661e603636"
+        }
+      },
+      "date": "2026-10-17",
+      "edition": "PM"
+    },
+    "2026-10-18-AM": {
+      "chats": {
+        "400521524": {
+          "bytes": 37848,
+          "file_id": "BQACAgUAAxkDAAMPatRO4p_x8eccQpLVUUYk7VYZO8MAAvQgAAJTOahW77uLWq4tPDw9BA",
+          "file_name": "The-Global-Brief-2026-10-18-AM.html",
+          "file_unique_id": "AgAD9CAAAlM5qFY",
+          "message_id": 15,
+          "sent_at": "2026-10-18T04:45:23+00:00",
+          "sha256": "23c0fce10aabe68629a0c1358d52db90c9dd4523b5b6368c72bc7839036dc7a6"
+        }
+      },
+      "date": "2026-10-18",
+      "edition": "AM"
+    },
+    "2026-10-18-PM": {
+      "chats": {
+        "400521524": {
+          "bytes": 38534,
+          "file_id": "BQACAgUAAxkDAAMQatT0w1GeOA6SYIGc6EHSoaLFI28AAjsiAAJTOahWZK1I_5O_Jgg9BA",
+          "file_name": "The-Global-Brief-2026-10-18-PM.html",
+          "file_unique_id": "AgADOyIAAlM5qFY",
+          "message_id": 16,
+          "sent_at": "2026-10-18T16:33:07+00:00",
+          "sha256": "724215be2400f6bd28d815fb7f6d88bc0419419cc25e825289c3cc8a93b6c98f"
+        }
+      },
+      "date": "2026-10-18",
+      "edition": "PM"
+    },
+    "2026-10-19-AM": {
+      "chats": {
+        "400521524": {
+          "bytes": 37485,
+          "file_id": "BQACAgUAAxkDAAMRatWiMW4mcyxOgdrnJ7h7jJdzNSUAAjoeAAJTObBWMytsjzffPmU9BA",
+          "file_name": "The-Global-Brief-2026-10-19-AM.html",
+          "file_unique_id": "AgADOh4AAlM5sFY",
+          "message_id": 17,
+          "sent_at": "2026-10-19T04:53:06+00:00",
+          "sha256": "bdd900c5423aa5e91e776c7b1c17ac493802dc72d148c19a20ca78e70f495477"
+        }
+      },
+      "date": "2026-10-19",
+      "edition": "AM"
+    },
+    "2026-10-19-PM": {
+      "chats": {
+        "400521524": {
+          "bytes": 37940,
+          "file_id": "BQACAgUAAxkDAAMSatZtxAisYgWsZXEWmnqLcwkrWioAAk8hAALBvbhWkD6tjRZQfwABPQQ",
+          "file_name": "The-Global-Brief-2026-10-19-PM.html",
+          "file_unique_id": "AgADTyEAAsG9uFY",
+          "message_id": 18,
+          "sent_at": "2026-10-19T19:21:40+00:00",
+          "sha256": "8a505724387e02b7fd38205ab86716c809de570abda1943f36ab3d94965961b2"
+        }
+      },
+      "date": "2026-10-19",
+      "edition": "PM"
+    },
+    "2026-10-20-AM": {
+      "chats": {
+        "400521524": {
+          "bytes": 37818,
+          "file_id": "BQACAgUAAxkDAAMTatb1ksRxv3czTthRN9eDB-TFgFoAAvIhAALBvbhWHGBGgT7NiBs9BA",
+          "file_name": "The-Global-Brief-2026-10-20-AM.html",
+          "file_unique_id": "AgAD8iEAAsG9uFY",
+          "message_id": 19,
+          "sent_at": "2026-10-20T05:01:07+00:00",
+          "sha256": "ff644f4e41536b6ca744fcafcbf79b729a750e8e5fc30308f84bf8ca9cca6f28"
+        }
+      },
+      "date": "2026-10-20",
+      "edition": "AM"
+    },
+    "2026-10-20-PM": {
+      "chats": {
+        "400521524": {
+          "bytes": 36742,
+          "file_id": "BQACAgUAAxkDAAMUatesEjCD_z3VQQuOMFmkoIaBlw8AAm8mAALBvcBWheyDd7m1gm49BA",
+          "file_name": "The-Global-Brief-2026-10-20-PM.html",
+          "file_unique_id": "AgADbyYAAsG9wFY",
+          "message_id": 20,
+          "sent_at": "2026-10-20T17:59:46+00:00",
+          "sha256": "e999a628f52afb120bdf8112d8927724b1cc603718a985d0b7ad50c5de677de1"
+        }
+      },
+      "date": "2026-10-20",
+      "edition": "PM"
+    },
+    "2026-10-21-AM": {
+      "chats": {
+        "400521524": {
+          "bytes": 39942,
+          "file_id": "BQACAgUAAxkDAAMVathG60g8PyMwzYfm9ibZbN3iQzgAApYiAAIXdMhWSIl-doLBDIE9BA",
+          "file_name": "The-Global-Brief-2026-10-21-AM.html",
+          "file_unique_id": "AgADliIAAhd0yFY",
+          "message_id": 21,
+          "sent_at": "2026-10-21T05:00:27+00:00",
+          "sha256": "ca5ebd7c8f750ac5a0860fe89aab662709d917c8122af20d77a0da71d6e516b3"
+        }
+      },
+      "date": "2026-10-21",
+      "edition": "AM"
+    },
+    "2026-10-21-PM": {
+      "chats": {
+        "400521524": {
+          "bytes": 36338,
+          "file_id": "BQACAgUAAxkDAAMWatj-a9KRbKOm8TXYz4uMWZ64o2QAAq0kAAIXdMhWyuBABDqCwvs9BA",
+          "file_name": "The-Global-Brief-2026-10-21-PM.html",
+          "file_unique_id": "AgADrSQAAhd0yFY",
+          "message_id": 22,
+          "sent_at": "2026-10-21T18:03:23+00:00",
+          "sha256": "81f0a3d6fbc7ba78bd5b961e4c8ede0b1d95cf5d707c8763174e6b1917d0cab9"
+        }
+      },
+      "date": "2026-10-21",
+      "edition": "PM"
+    },
+    "2026-10-22-AM": {
+      "chats": {
+        "400521524": {
+          "bytes": 39516,
+          "file_id": "BQACAgUAAxkDAAMXatmYsm1AguEcRR11byX-ycHzT2oAAhIhAAIXdNBWztBCHlAnWls9BA",
+          "file_name": "The-Global-Brief-2026-10-22-AM.html",
+          "file_unique_id": "AgADEiEAAhd00FY",
+          "message_id": 23,
+          "sent_at": "2026-10-22T05:01:39+00:00",
+          "sha256": "f9800a72c89bb00baf903eef28824f154f96a66e080385660b11c638c7751baf"
+        }
+      },
+      "date": "2026-10-22",
+      "edition": "AM"
+    },
+    "2026-10-22-PM": {
+      "chats": {
+        "400521524": {
+          "bytes": 37610,
+          "file_id": "BQACAgUAAxkDAAMYatpPKUbI97mcWcpZkGRk5lyU0sEAAnkfAALqgdFWDJke5m7Vg0E9BA",
+          "file_name": "The-Global-Brief-2026-10-22-PM.html",
+          "file_unique_id": "AgADeR8AAuqB0VY",
+          "message_id": 24,
+          "sent_at": "2026-10-22T18:00:09+00:00",
+          "sha256": "94058f0834003fe23da1e293a160101d7edfd87e507a6ce8c316dc13b9c40199"
+        }
+      },
+      "date": "2026-10-22",
+      "edition": "PM"
+    },
+    "2026-10-23-AM": {
+      "chats": {
+        "400521524": {
+          "bytes": 37282,
+          "file_id": "BQACAgUAAxkDAAMZatrqg_ui0yv3Z1qoOA_xtTPtUxYAArEgAALqgdlWQorBJENlfUo9BA",
+          "file_name": "The-Global-Brief-2026-10-23-AM.html",
+          "file_unique_id": "AgADsSAAAuqB2VY",
+          "message_id": 25,
+          "sent_at": "2026-10-23T05:02:59+00:00",
+          "sha256": "2b6e0207f6b4be51315e40692a6027137c082bc833951ef70e30c61dae576df6"
+        }
+      },
+      "date": "2026-10-23",
+      "edition": "AM"
+    },
+    "2026-10-23-PM": {
+      "chats": {
+        "400521524": {
+          "bytes": 37585,
+          "file_id": "BQACAgUAAxkDAAMaatufS2BvLwbUf21teNioQDO71qwAAjkpAALqgeFWmBDa7Y4IvE89BA",
+          "file_name": "The-Global-Brief-2026-10-23-PM.html",
+          "file_unique_id": "AgADOSkAAuqB4VY",
+          "message_id": 26,
+          "sent_at": "2026-10-23T17:54:20+00:00",
+          "sha256": "a009602ff6c3335c1f80b2de348ce100d8bb85299754c37dc3fed17ea6e9090e"
+        }
+      },
+      "date": "2026-10-23",
+      "edition": "PM"
+    },
+    "2026-10-24-AM": {
+      "chats": {
+        "400521524": {
+          "bytes": 37842,
+          "file_id": "BQACAgUAAxkDAAMbatw4iU13UT-MUVCJkZ8iJtn0iMMAAtYgAAJpkOFWAwUJJL5_2iE9BA",
+          "file_name": "The-Global-Brief-2026-10-24-AM.html",
+          "file_unique_id": "AgAD1iAAAmmQ4VY",
+          "message_id": 27,
+          "sent_at": "2026-10-24T04:48:09+00:00",
+          "sha256": "16aeddfcdd1a741813f827c9c6aaa8e83b133517ce1037bf94c241cda4e5a2dd"
+        }
+      },
+      "date": "2026-10-24",
+      "edition": "AM"
+    },
+    "2026-10-24-PM": {
+      "chats": {
+        "400521524": {
+          "bytes": 36984,
+          "file_id": "BQACAgUAAxkDAAMcatzeo-twEQ4fj7UO2Hj-1BwWWSUAAlkhAAJpkOlWc_cSavvav-U9BA",
+          "file_name": "The-Global-Brief-2026-10-24-PM.html",
+          "file_unique_id": "AgADWSEAAmmQ6VY",
+          "message_id": 28,
+          "sent_at": "2026-10-24T16:36:51+00:00",
+          "sha256": "5b8ba2d7ff87b7ecdc5f219fdfae641ce68151fd293f0ae34833b3a7b95b6fef"
+        }
+      },
+      "date": "2026-10-24",
+      "edition": "PM"
+    },
+    "2026-10-25-AM": {
+      "chats": {
+        "400521524": {
+          "bytes": 37775,
+          "file_id": "BQACAgUAAxkDAAMdat2LtgOqZ3GP6Kv5VmyTeNQIbRIAAkEiAAJpkOlWa2Y6OOQxs3U9BA",
+          "file_name": "The-Global-Brief-2026-10-25-AM.html",
+          "file_unique_id": "AgADQSIAAmmQ6VY",
+          "message_id": 29,
+          "sent_at": "2026-10-25T04:55:18+00:00",
+          "sha256": "25386af321b97e53af552cfe7a7183a7ce1ba9964675217afe2f14bb6a815f21"
+        }
+      },
+      "date": "2026-10-25",
+      "edition": "AM"
+    },
+    "2026-10-25-PM": {
+      "chats": {
+        "400521524": {
+          "bytes": 37487,
+          "file_id": "BQACAgUAAxkDAAMeat42zgjtKd1HX14gwfn-aLWuNLQAAmIiAAKNl_hWAAHp9o83hpNVPQQ",
+          "file_name": "The-Global-Brief-2026-10-25-PM.html",
+          "file_unique_id": "AgADYiIAAo2X-FY",
+          "message_id": 30,
+          "sent_at": "2026-10-25T17:05:18+00:00",
+          "sha256": "f82ef2014445574d9a45e3e423917e66a61c34c99e8985ef7d4afd80a322fcf6"
+        }
+      },
+      "date": "2026-10-25",
+      "edition": "PM"
+    },
+    "2026-10-26-AM": {
+      "chats": {
+        "400521524": {
+          "bytes": 39063,
+          "file_id": "BQACAgUAAxkDAAMfat7eNpRs0Wr9-rUnu-oVktAUX3oAAvAiAAKNl_hWKRDWkZOW76w9BA",
+          "file_name": "The-Global-Brief-2026-10-26-AM.html",
+          "file_unique_id": "AgAD8CIAAo2X-FY",
+          "message_id": 31,
+          "sent_at": "2026-10-26T04:59:34+00:00",
+          "sha256": "253e3ff5e12f30382dbea0f9be0c5c295928086d43a4f276047e91f3cebc0258"
+        }
+      },
+      "date": "2026-10-26",
+      "edition": "AM"
+    },
+    "2026-10-26-PM": {
+      "chats": {
+        "400521524": {
+          "bytes": 37322,
+          "file_id": "BQACAgUAAxkDAAMgat-n3hylNV1XpdnLq5rUJS9jRhYAAncmAAKNlwABV3jBanRcQS_JPQQ",
+          "file_name": "The-Global-Brief-2026-10-26-PM.html",
+          "file_unique_id": "AgADdyYAAo2XAAFX",
+          "message_id": 32,
+          "sent_at": "2026-10-26T19:19:58+00:00",
+          "sha256": "1f091c90cbb195812475330bd55bf24667960ec9caf3b53331bcec42b4ec0071"
+        }
+      },
+      "date": "2026-10-26",
+      "edition": "PM"
+    },
+    "2026-10-27-AM": {
+      "chats": {
+        "400521524": {
+          "bytes": 38820,
+          "file_id": "BQACAgUAAxkDAAMhauAzwjHiQQ7Je3ActaEqRaH7SVAAAg4lAALeLQFXUgJ_roiS3xk9BA",
+          "file_name": "The-Global-Brief-2026-10-27-AM.html",
+          "file_unique_id": "AgADDiUAAt4tAVc",
+          "message_id": 33,
+          "sent_at": "2026-10-27T05:16:50+00:00",
+          "sha256": "5175668344b3107f08056c787d471cd41d1287a8cd9a8d4821246ae3a13afeaf"
+        }
+      },
+      "date": "2026-10-27",
+      "edition": "AM"
+    }
+  },
+  "updated_at": "2026-10-27T05:16:50+00:00",
+  "version": 1
 }
