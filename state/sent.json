@@ -509,8 +509,23 @@
       },
       "date": "2026-10-31",
       "edition": "AM"
+    },
+    "2026-10-31-PM": {
+      "chats": {
+        "400521524": {
+          "bytes": 36673,
+          "file_id": "BQACAgUAAxkDAAMtauYpYeLk5ZXUMoF8GaX6kSo9QHAAApAkAAJzkThXxxE9zS2ZMB49BA",
+          "file_name": "The-Global-Brief-2026-10-31-PM.html",
+          "file_unique_id": "AgADkCQAAnOROFc",
+          "message_id": 45,
+          "sent_at": "2026-10-31T17:46:09+00:00",
+          "sha256": "d210c2a42f0dac423c17db0fd201e27a6dd0f2dd29bdd3c645ee3ce0d1f5625a"
+        }
+      },
+      "date": "2026-10-31",
+      "edition": "PM"
     }
   },
-  "updated_at": "2026-10-31T05:57:46+00:00",
+  "updated_at": "2026-10-31T17:46:09+00:00",
   "version": 1
 }
